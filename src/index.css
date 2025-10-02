@@ -1,0 +1,14 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --font-poppins: "Poppins", sans-serif;
+  --font-inter: "Inter", sans-serif;
+
+  /* Color */
+  --color-primary: #ffb300;
+  --color-secondary: #fafafa;
+  --color-tertiary: #e0e0e0;
+  --color-quaternary: #666666;
+  --color-quinary: #121212;
+}
