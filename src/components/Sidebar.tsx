@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Home,
   CircleUser,
@@ -13,10 +13,23 @@ import LogoutPopup from "../components/Popup";
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
   const [showPopup, setShowPopup] = useState(false);
+  const [user, setUser] = useState<{ name: string; email: string } | null>(
+    null
+  );
   const location = useLocation();
   const navigate = useNavigate();
 
-  // mapping menu ke route
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch {
+        console.error("Gagal memuat data user");
+      }
+    }
+  }, []);
+
   const menus = [
     { name: "Home", icon: Home, path: "/home" },
     { name: "Project", icon: Folders, path: "/projects" },
@@ -24,8 +37,8 @@ const Sidebar = () => {
 
   const isActiveMenu = (path: string) => location.pathname === path;
 
-  // handle logout
   const handleLogout = () => {
+    localStorage.removeItem("tokens");
     localStorage.removeItem("user");
     setShowPopup(false);
     navigate("/login");
@@ -37,7 +50,6 @@ const Sidebar = () => {
         ${isOpen ? "w-64" : "w-14"}
       `}
     >
-      {/* Header Profile */}
       <div
         onClick={() => setShowPopup(!showPopup)}
         className={`group flex items-center border-b border-quinary p-4 relative cursor-pointer 
@@ -50,19 +62,15 @@ const Sidebar = () => {
           strokeWidth={3}
           className="text-quinary group-hover:text-secondary"
         />
-        <span
-          className={`text-xl font-bold whitespace-nowrap overflow-hidden ease-in-out 
-      ${
-        isOpen
-          ? "opacity-100 translate-x-0 ml-2"
-          : "opacity-0 -translate-x-5 w-0"
-      }
-    `}
-        >
-          Profile
-        </span>
 
-        {/* Tombol Toggle Sidebar */}
+        {isOpen && (
+          <div className="flex flex-col ml-2 overflow-hidden">
+            <span className="text-xl font-bold truncate">
+              {user?.name || "User"}
+            </span>
+          </div>
+        )}
+
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -74,10 +82,13 @@ const Sidebar = () => {
         </button>
       </div>
 
-      {/* Popup Logout */}
-      {showPopup && <LogoutPopup onLogout={handleLogout} />}
+      {showPopup && (
+        <LogoutPopup
+          onLogout={handleLogout}
+          onClose={() => setShowPopup(false)}
+        />
+      )}
 
-      {/* Menu utama */}
       <div className="flex-grow flex flex-col gap-2 mt-4">
         {menus.map((menu, index) => {
           const Icon = menu.icon;
@@ -118,7 +129,6 @@ const Sidebar = () => {
         })}
       </div>
 
-      {/* Settings mentok bawah */}
       <div className="border-t border-quinary">
         <div className="mx-2 my-4">
           <Link

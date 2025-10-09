@@ -7,7 +7,7 @@ type InputFieldProps = {
   value: string;
   placeholder: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void; // ✅ tambahin ini
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   className?: string;
 };
 
