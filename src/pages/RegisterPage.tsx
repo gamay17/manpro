@@ -19,6 +19,8 @@ const RegisterPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isFading, setIsFading] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const [errors, setErrors] = useState<ErrorState>({
     name: "",
@@ -41,44 +43,25 @@ const RegisterPage: React.FC = () => {
 
     switch (field) {
       case "name":
-        if (!value) error = "Nama wajib diisi!";
+        if (!value) error = "Name is required!";
         break;
       case "email":
-        if (!value) error = "Email wajib diisi!";
+        if (!value) error = "Email is required!";
         else if (!/\S+@\S+\.\S+/.test(value))
-          error = "Format email tidak valid, contoh: example@email.com";
+          error = "Invalid email format.";
         break;
       case "password":
-        if (!value) error = "Password wajib diisi!";
-        else if (value.length < 8) error = "Password minimal 8 karakter!";
+        if (!value) error = "Password is required!";
+        else if (value.length < 8)
+          error = "Password must be at least 8 characters.";
         break;
       case "confirmPassword":
-        if (!value) error = "Konfirmasi password wajib diisi!";
-        else if (value !== currentPassword) error = "Password tidak cocok!";
-        break;
-      default:
+        if (!value) error = "Please confirm your password.";
+        else if (value !== currentPassword) error = "Passwords do not match!";
         break;
     }
 
-    setErrors((prev) => ({ ...prev, [field]: error }));
     return error;
-  };
-
-  const clearGlobalIfAllFilled = (
-    nameVal: string,
-    emailVal: string,
-    passVal: string,
-    confirmVal: string
-  ) => {
-    if (
-      message?.type === "error" &&
-      nameVal.trim() &&
-      emailVal.trim() &&
-      passVal.trim() &&
-      confirmVal.trim()
-    ) {
-      setMessage(null);
-    }
   };
 
   const handleChange =
@@ -90,43 +73,27 @@ const RegisterPage: React.FC = () => {
       if (field === "password") setPassword(val);
       if (field === "confirmPassword") setConfirmPassword(val);
 
-      validateField(field, val, field === "confirmPassword" ? password : val);
-
-      if (field === "password" && confirmPassword) {
-        validateField("confirmPassword", confirmPassword, val);
-      }
-
-      clearGlobalIfAllFilled(
-        field === "name" ? val : name,
-        field === "email" ? val : email,
-        field === "password" ? val : password,
-        field === "confirmPassword" ? val : confirmPassword
-      );
     };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setHasSubmitted(true);
 
     const nameErr = validateField("name", name);
     const emailErr = validateField("email", email);
     const passwordErr = validateField("password", password);
-    const confirmErr = validateField(
-      "confirmPassword",
-      confirmPassword,
-      password
-    );
+    const confirmErr = validateField("confirmPassword", confirmPassword, password);
 
-    if (!name || !email || !password || !confirmPassword) {
-      setMessage({
-        text: "Harap lengkapi semua field sebelum melanjutkan.",
-        type: "error",
-      });
-      return;
-    }
+    setErrors({
+      name: nameErr,
+      email: emailErr,
+      password: passwordErr,
+      confirmPassword: confirmErr,
+    });
 
     if (nameErr || emailErr || passwordErr || confirmErr) {
       setMessage({
-        text: "Periksa kembali form Anda, ada data yang belum valid.",
+        text: "Please check your inputs again.",
         type: "error",
       });
       return;
@@ -137,20 +104,12 @@ const RegisterPage: React.FC = () => {
       await authService.register(payload);
 
       setMessage({
-        text: "Registrasi berhasil!",
+        text: "Registration successful!",
         type: "success",
       });
 
-      setName("");
-      setEmail("");
-      setPassword("");
-      setConfirmPassword("");
-      setErrors({ name: "", email: "", password: "", confirmPassword: "" });
-
-      setTimeout(() => {
-        setMessage(null);
-        navigate("/login");
-      }, 2000);
+      setTimeout(() => setIsFading(true), 500);
+      setTimeout(() => navigate("/login"), 1000);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setMessage({ text: err.message, type: "error" });
@@ -159,37 +118,50 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <>
-      <h1 className="font-bold text-[33px] m-2 font-poppins">Sign Up</h1>
+    <div
+      className={`flex flex-col items-center justify-start w-full py-4 transition-opacity duration-700 ${
+        isFading ? "opacity-0" : "opacity-100"
+      }`}
+    >
+      <h1 className="font-black text-4xl font-poppins text-primary mb-6">
+        Create Account
+      </h1>
 
-      <form onSubmit={handleSubmit} className="flex flex-col w-80 gap-3">
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col w-80 gap-2 sm:gap-4"
+      >
         <InputField
           label="Name"
           type="text"
           value={name}
           onChange={handleChange("name")}
-          placeholder="Enter name"
+          placeholder="Enter your name"
         />
-        {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
+        {hasSubmitted && errors.name && (
+          <p className="text-sm text-red-500">{errors.name}</p>
+        )}
 
         <InputField
           label="Email"
           type="email"
           value={email}
           onChange={handleChange("email")}
-          placeholder="Enter email"
+          placeholder="Enter your email"
         />
-        {errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
+        {hasSubmitted && errors.email && (
+          <p className="text-sm text-red-500">{errors.email}</p>
+        )}
 
         <InputField
           label="Password"
           type="password"
           value={password}
           onChange={handleChange("password")}
-          placeholder="Enter password"
+          placeholder="Create password"
         />
-        {errors.password && (
-          <p className="text-sm text-red-600">{errors.password}</p>
+        {hasSubmitted && errors.password && (
+          <p className="text-sm text-red-500">{errors.password}</p>
         )}
 
         <InputField
@@ -197,43 +169,38 @@ const RegisterPage: React.FC = () => {
           type="password"
           value={confirmPassword}
           onChange={handleChange("confirmPassword")}
-          placeholder="Confirm password"
+          placeholder="Re-enter password"
         />
-        {errors.confirmPassword && (
-          <p className="text-sm text-red-600">{errors.confirmPassword}</p>
+        {hasSubmitted && errors.confirmPassword && (
+          <p className="text-sm text-red-500">{errors.confirmPassword}</p>
         )}
 
         {message && (
           <p
-            className={`text-sm text-center ${
-              message.type === "error" ? "text-red-600" : "text-green-600"
+            className={`text-sm text-center mt-1 transition-all duration-300 ${
+              message.type === "error" ? "text-red-500" : "text-green-600"
             }`}
           >
             {message.text}
           </p>
         )}
 
-        <div className="w-full mt-6">
+        <div className="mt-6">
           <Button
             type="submit"
-            text="Register"
-            className="bg-primary hover:bg-[#d69601] text-quinary"
+            text="Sign Up"
+            className="bg-primary hover:bg-[#d69601] text-secondary border-0 py-2 rounded-lg font-semibold transition-all duration-200"
           />
         </div>
 
-        <div className="gap-2 mt-2 w-full text-center">
-          <span className="text-sm font-medium text-quaternary font-inter">
-            Do have an account?{" "}
-          </span>
-          <Link
-            to="/login"
-            className="text-sm font-inter font-semibold hover:underline cursor-pointer"
-          >
+        <p className="text-sm text-center font-inter font-medium text-quaternary">
+          Already have an account?{" "}
+          <Link to="/login" className="text-quinary font-bold hover:underline">
             Sign In
           </Link>
-        </div>
+        </p>
       </form>
-    </>
+    </div>
   );
 };
 

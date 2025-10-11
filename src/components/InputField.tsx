@@ -1,4 +1,3 @@
-// src/components/InputField.tsx
 import React from "react";
 
 type InputFieldProps = {
@@ -22,7 +21,7 @@ const InputField: React.FC<InputFieldProps> = ({
 }) => {
   return (
     <div className={`w-full ${className}`}>
-      <label className="block mb-2 font-medium text-left font-inter">
+      <label className="block mb-2 font-medium text-left font-inter text-quinary">
         {label}
       </label>
       <input
@@ -31,7 +30,9 @@ const InputField: React.FC<InputFieldProps> = ({
         placeholder={placeholder}
         onChange={onChange}
         onBlur={onBlur}
-        className="font-inter border bg-tertiary border-quaternary text-quinary p-2 rounded w-full box-border"
+        className="font-inter border-1 border-primary bg-tertiary text-quinary px-3 py-2 
+             rounded-xl w-full box-border shadow-sm transition-all duration-200 
+             focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
       />
     </div>
   );

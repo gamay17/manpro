@@ -22,7 +22,6 @@ const ForgotPasswordPage = () => {
       return;
     }
 
-    console.log("Register data:", { email, password });
     setMessage("Registrasi berhasil .");
   };
 

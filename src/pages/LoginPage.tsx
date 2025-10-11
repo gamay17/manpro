@@ -11,70 +11,18 @@ const LoginPage: React.FC = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  const [errors, setErrors] = useState({
-    email: "",
-    password: "",
-  });
-
   const [message, setMessage] = useState<{
     text: string;
     type: "error" | "success";
   } | null>(null);
 
-  const validateField = (field: string, value: string) => {
-    let error = "";
-
-    switch (field) {
-      case "email":
-        if (!value) error = "Email wajib diisi!";
-        else if (!/\S+@\S+\.\S+/.test(value))
-          error = "Format email tidak valid, contoh: example@email.com";
-        break;
-      case "password":
-        if (!value) error = "Password wajib diisi!";
-        else if (value.length < 8) error = "Password minimal 8 karakter!";
-        break;
-      default:
-        break;
-    }
-
-    setErrors((prev) => ({ ...prev, [field]: error }));
-    return error;
-  };
-
-  const handleChange =
-    (field: "email" | "password") =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = e.target.value;
-
-      if (field === "email") setEmail(val);
-      if (field === "password") setPassword(val);
-
-      validateField(field, val);
-
-      if (message?.type === "error" && email && password) {
-        setMessage(null);
-      }
-    };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const emailErr = validateField("email", email);
-    const passErr = validateField("password", password);
-
+    // check if fields are empty
     if (!email || !password) {
       setMessage({
-        text: "Harap lengkapi semua field sebelum melanjutkan.",
-        type: "error",
-      });
-      return;
-    }
-
-    if (emailErr || passErr) {
-      setMessage({
-        text: "Periksa kembali form Anda, ada data yang belum valid.",
+        text: "Please fill in both email and password.",
         type: "error",
       });
       return;
@@ -83,120 +31,109 @@ const LoginPage: React.FC = () => {
     try {
       await login(email, password);
 
-      setMessage({
-        text: "Login berhasil!",
-        type: "success",
-      });
-
+      // reset form
       setEmail("");
       setPassword("");
-      setErrors({ email: "", password: "" });
 
-      setTimeout(() => {
-        navigate("/home");
-      }, 1200);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setMessage({ text: err.message, type: "error" });
-      } else {
-        setMessage({
-          text: "Terjadi kesalahan saat login.",
-          type: "error",
-        });
-      }
+      setTimeout(() => navigate("/home"), 500);
+    } catch {
+      // show error message if login fails
+      setMessage({
+        text: "Incorrect email or password.",
+        type: "error",
+      });
     }
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col md:flex-row overflow-hidden">
-      <div className="w-full md:w-[40%] p-6 bg-secondary flex flex-col items-center justify-start pt-12 md:pt-20">
-        <form onSubmit={handleSubmit} className="w-full max-w-sm">
-          <h1 className="font-bold text-[32px] md:text-[38px] mb-10 text-center font-poppins">
-            Sign In
+    <div className="h-screen w-screen bg-secondary flex flex-col md:flex-row overflow-hidden">
+      {/* Left side - login form */}
+      <div className="w-full md:w-[40%] flex justify-center items-start pt-28 px-6 ">
+        <form
+          onSubmit={handleSubmit}
+          className="w-full max-w-sm flex flex-col justify-center gap-3"
+        >
+          <h1 className="font-poppins font-bold text-[36px] md:text-[42px] text-center text-quinary leading-snug">
+            SIGN IN
           </h1>
+          <p className="text-center text-quaternary font-inter font-medium text-[15px] leading-relaxed mb-3">
+            Let’s get you signed in so you can continue where you left off.
+          </p>
 
-          <div className="flex flex-col gap-2">
-            <InputField
-              label="Email"
-              type="email"
-              value={email}
-              onChange={handleChange("email")}
-              placeholder="Enter email"
-            />
-            {errors.email && (
-              <p className="text-sm text-red-600">{errors.email}</p>
-            )}
+          <InputField
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Enter your email"
+          />
 
-            <InputField
-              label="Password"
-              type="password"
-              value={password}
-              onChange={handleChange("password")}
-              placeholder="Enter password"
-            />
-            {errors.password && (
-              <p className="text-sm text-red-600">{errors.password}</p>
-            )}
+          <InputField
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter your password"
+          />
 
-            <div className="w-full text-right">
-              <Link
-                to="/forgotPassword"
-                className="text-sm font-inter font-medium hover:underline cursor-pointer"
-              >
-                Forgot Password?
-              </Link>
-            </div>
+          <div className="w-full text-right mb-3">
+            <Link
+              to="/forgotPassword"
+              className="text-sm font-inter font-medium text-primary hover:underline cursor-pointer"
+            >
+              Forgot Password?
+            </Link>
+          </div>
 
-            {message && (
-              <p
-                className={`text-sm text-center mb-2 ${
-                  message.type === "error" ? "text-red-600" : "text-green-600"
-                }`}
-              >
-                {message.text}
-              </p>
-            )}
+          {/* Message display */}
+          {message && (
+            <p
+              className={`text-sm text-center ${
+                message.type === "error" ? "text-red-600" : "text-green-600"
+              }`}
+            >
+              {message.text}
+            </p>
+          )}
 
-            <div className="w-full mt-3">
-              <Button
-                type="submit"
-                text="Login"
-                className="bg-primary hover:bg-[#d69601] text-quinary w-full"
-              />
-            </div>
+          <Button
+            type="submit"
+            text="Login"
+            className="bg-primary hover:bg-[#d69601] text-secondary w-full rounded-xl py-2.5 text-[16px] font-semibold transition-all duration-200"
+          />
 
-            <div className="flex justify-center gap-2 mt-3">
-              <span className="font-inter text-sm font-medium text-[#666666]">
-                Don't have an account?
-              </span>
-              <Link
-                to="/register"
-                className="text-sm font-inter font-semibold hover:underline cursor-pointer"
-              >
-                Sign Up
-              </Link>
-            </div>
+          <div className="flex justify-center gap-2">
+            <span className="font-inter text-sm font-medium text-[#666666]">
+              Don’t have an account?
+            </span>
+            <Link
+              to="/register"
+              className="text-sm font-inter font-semibold text-primary hover:underline"
+            >
+              Sign Up
+            </Link>
           </div>
         </form>
       </div>
 
-      <div
-        className="hidden md:block w-[60%] bg-primary"
-        style={{
-          backgroundImage: `url(${Background})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="mt-20 ml-16 mr-10">
-          <h1 className="text-[32px] md:text-[40px] font-bold leading-tight font-poppins">
-            Hello, Welcome!
-          </h1>
-          <p className="mt-4 text-[16px] md:text-[20px] font-semibold font-inter text-justify">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec
-            rhoncus suscipit nibh, eget placerat nisi fringilla ut. Nulla
-            euismod quam non porttitor viverra.
-          </p>
+      {/* Right side - background image */}
+      <div className="hidden md:flex w-[60%] justify-center items-center px-4">
+        <div className="relative w-full h-[92vh] rounded-2xl overflow-hidden shadow-xl">
+          <img
+            src={Background}
+            alt="Welcome Background"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black/25" />
+          <div className="absolute inset-0 flex flex-col mt-16 px-14 text-white">
+            <h1 className="text-[38px] md:text-[46px] font-bold font-poppins leading-snug">
+              Hello, <br /> Welcome!
+            </h1>
+            <p className="mt-4 text-[18px] md:text-[20px] font-medium font-inter text-justify max-w-[85%]">
+              Step into your workspace and make today productive — your projects
+              are waiting for you.
+            </p>
+          </div>
         </div>
       </div>
     </div>

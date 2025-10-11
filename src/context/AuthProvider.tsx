@@ -3,9 +3,7 @@ import { AuthContext } from "./auth-context";
 import { authService } from "../service/authService";
 import type { IRegisterResponse } from "../types/auth";
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({
-  children,
-}) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<IRegisterResponse | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,16 +33,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const login = async (email: string, password: string): Promise<void> => {
     const result = await authService.login({ email, password });
 
-    console.log("HASIL LOGIN:", result);
-
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
 
     setToken(result.accessToken);
-
-    console.log("USER DISIMPAN:", localStorage.getItem("user"));
   };
 
   const logout = (): void => {
@@ -54,15 +48,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     setToken(null);
   };
 
-  const updateUser = (newName: string): void => {
+  const updateUser = (data: { name?: string; email?: string }): void => {
     if (!user) return;
 
-    authService.updateUser(user.id, newName);
 
-    const updatedUser = { ...user, name: newName };
-    setUser(updatedUser);
+    authService.updateUser(user.id, data);
 
-    localStorage.setItem("user", JSON.stringify(updatedUser));
+    const updatedUser = JSON.parse(localStorage.getItem("user") || "null") as IRegisterResponse | null;
+
+    if (updatedUser) {
+      setUser(updatedUser); 
+    } else {
+      const merged = { ...user, ...data };
+      setUser(merged);
+      localStorage.setItem("user", JSON.stringify(merged));
+    }
+  };
+
+  const updatePassword = (oldPassword: string, newPassword: string): void => {
+    if (!user) return;
+    authService.updatePassword(user.id, oldPassword, newPassword);
   };
 
   if (loading) {
@@ -71,7 +76,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   return (
     <AuthContext.Provider
-      value={{ user, token, login, register, logout, updateUser }}
+      value={{ user, token, login, register, logout, updateUser, updatePassword }}
     >
       {children}
     </AuthContext.Provider>

@@ -20,7 +20,7 @@ export const authService = {
     );
 
     if (users.some((u) => u.email === payload.email)) {
-      throw new Error("Email sudah terdaftar");
+      throw new Error("Email already exists.");
     }
 
     const newUserWithPassword: IUserData = {
@@ -35,7 +35,7 @@ export const authService = {
     users.push(newUserWithPassword);
     localStorage.setItem(USERS_KEY, JSON.stringify(users));
 
-    // return tanpa password
+    // Return without password
     return {
       id: newUserWithPassword.id,
       name: newUserWithPassword.name,
@@ -54,7 +54,7 @@ export const authService = {
     );
 
     if (!user) {
-      throw new Error("Email atau password salah");
+      throw new Error("Incorrect email or password.");
     }
 
     const tokens: ILoginResponse = {
@@ -83,7 +83,7 @@ export const authService = {
     ) as ILoginResponse;
 
     if (!tokens.refreshToken) {
-      throw new Error("Token tidak ditemukan");
+      throw new Error("Token not found.");
     }
 
     const newTokens: ILoginRefreshResponse = {
@@ -99,26 +99,45 @@ export const authService = {
     localStorage.removeItem(TOKEN_KEY);
   },
 
-  updateUser(id: string, newName: string): void {
+  updateUser(id: string, data: { name?: string; email?: string }): void {
     const users: IRegisterResponse[] = JSON.parse(
       localStorage.getItem("users") || "[]"
     );
     const index = users.findIndex((u) => u.id === id);
 
     if (index !== -1) {
-      users[index].name = newName;
+      if (data.name) users[index].name = data.name;
+      if (data.email) users[index].email = data.email;
       users[index].updatedAt = new Date();
 
       localStorage.setItem("users", JSON.stringify(users));
 
-      // update user aktif juga
       const currentUser: IRegisterResponse | null = JSON.parse(
         localStorage.getItem("user") || "null"
       );
       if (currentUser && currentUser.id === id) {
-        currentUser.name = newName;
+        if (data.name) currentUser.name = data.name;
+        if (data.email) currentUser.email = data.email;
         localStorage.setItem("user", JSON.stringify(currentUser));
       }
     }
+  },
+
+  updatePassword(id: string, oldPassword: string, newPassword: string): void {
+    const users: IUserData[] = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
+    const index = users.findIndex((u) => u.id === id);
+
+    if (index === -1) {
+      throw new Error("User not found.");
+    }
+
+    if (users[index].password !== oldPassword) {
+      throw new Error("Old password does not match.");
+    }
+
+    users[index].password = newPassword;
+    users[index].updatedAt = new Date();
+
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
   },
 };

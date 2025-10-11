@@ -5,23 +5,32 @@ import Background from "../assets/image/background.png";
 const AuthLayout: React.FC = (): JSX.Element => {
   return (
     <div
-      className={`
-        min-h-screen flex justify-center items-center px-4
-        sm:bg-primary sm:bg-cover sm:bg-center
-      `}
+      className="
+        relative min-h-screen flex justify-center items-center 
+        px-4 py-8 overflow-hidden
+      "
       style={{
         backgroundImage: `url(${Background})`,
+        backgroundSize: "cover",
         backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
       }}
     >
+      {/* Lapisan gradasi + blur ringan agar kontras dan lembut */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-black/30 backdrop-blur-[3px]" />
+
+      {/* Card utama (tempat form) */}
       <div
         className="
-          w-full max-w-sm sm:max-w-md 
-          min-h-[480px] sm:min-h-[550px] 
-          p-6 bg-secondary shadow-lg rounded-xl flex flex-col items-center
+          relative z-10 w-full max-w-md sm:max-w-lg 
+          bg-secondary/75 backdrop-blur-md 
+          rounded-3xl border border-tertiary
+          shadow-2xl
+          p-6 sm:p-10 
+          flex flex-col items-center justify-center
+          transition-all duration-300
         "
       >
-        
         <Outlet />
       </div>
     </div>
