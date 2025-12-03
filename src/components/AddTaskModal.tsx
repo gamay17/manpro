@@ -13,7 +13,7 @@ interface AddTaskModalProps {
   onClose: () => void;
   onSubmit: (data: CreateTaskInput) => void;
 
-  /** Members di project ini */
+  /** Members di project ini (SUDAH DIFILTER di parent kalau leader) */
   members: Member[];
   /** Divisions di project ini */
   divisions: Division[];

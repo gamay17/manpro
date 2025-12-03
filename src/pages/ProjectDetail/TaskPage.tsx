@@ -1,4 +1,3 @@
-// src/pages/ProjectDetail/TaskPage.tsx
 import React from "react";
 import { useParams } from "react-router-dom";
 import { Plus, ChevronDown } from "lucide-react";
@@ -144,6 +143,11 @@ const formatDate = (value?: string | null) => {
   return date.toISOString().slice(0, 10);
 };
 
+type EditPermission = {
+  canEditAllFields: boolean;
+  canChangeStatusOnly: boolean;
+};
+
 const TaskPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const projectId = Number(id);
@@ -166,6 +170,10 @@ const TaskPage: React.FC = () => {
   const [openAdd, setOpenAdd] = React.useState(false);
   const [openEdit, setOpenEdit] = React.useState(false);
   const [editingTask, setEditingTask] = React.useState<Task | null>(null);
+  const [editPermission, setEditPermission] = React.useState<EditPermission>({
+    canEditAllFields: false,
+    canChangeStatusOnly: false,
+  });
 
   const [divisionFilter, setDivisionFilter] =
     React.useState<DivisionFilterValue>("all");
@@ -217,6 +225,39 @@ const TaskPage: React.FC = () => {
     return map;
   }, [divisions]);
 
+  // helper untuk cek permission per task
+  const getTaskPermission = React.useCallback(
+    (task: Task) => {
+      const assignee = task.assigneeId
+        ? memberMap.get(task.assigneeId)
+        : undefined;
+      const assigneeDivision = assignee
+        ? divisionMap.get(assignee.divisionId)
+        : undefined;
+
+      const isLeaderForThisTask =
+        !!currentUserId &&
+        !!assigneeDivision &&
+        assigneeDivision.coordinatorId === currentUserId;
+
+      const isAssignee =
+        !!currentMemberId && assignee?.id === currentMemberId;
+
+      const canEditTask = canManageAll || isLeaderForThisTask;
+      const canChangeStatus =
+        canManageAll || isLeaderForThisTask || isAssignee;
+
+      return {
+        isLeaderForThisTask,
+        isAssignee,
+        canEditTask,
+        canChangeStatus,
+      };
+    },
+    [canManageAll, currentUserId, currentMemberId, memberMap, divisionMap]
+  );
+
+  // Leader = ada division yg coordinatorId-nya current user
   const isLeader = React.useMemo(
     () =>
       !!currentUserId &&
@@ -225,6 +266,25 @@ const TaskPage: React.FC = () => {
   );
 
   const canCreateTask = canManageAll || isLeader;
+
+  // daftar member yang boleh jadi assignee di AddTaskModal
+  // - Owner/Manager: semua member
+  // - Leader: hanya anggota divisinya + dirinya sendiri
+  const membersForAdd = React.useMemo(() => {
+    if (canManageAll) return members;
+    if (!isLeader || !currentUserId) return members;
+
+    const leaderDivisionIds = divisions
+      .filter((d) => d.coordinatorId === currentUserId)
+      .map((d) => d.id);
+
+    if (leaderDivisionIds.length === 0) return members;
+
+    return members.filter(
+      (m) =>
+        leaderDivisionIds.includes(m.divisionId) || m.userId === currentUserId
+    );
+  }, [members, divisions, canManageAll, isLeader, currentUserId]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -385,9 +445,21 @@ const TaskPage: React.FC = () => {
     });
   }, [tasks, divisionFilter, memberMap]);
 
+  // 🔐 Ubah status: Owner/Manager (canManageAll),
+  // Leader utk task di divisinya, atau member utk task yg dia assignee.
   const handleStatusChange = async (idTask: number, value: string) => {
     if (!taskSvc) return;
     const status = value as TaskStatus;
+
+    const task = tasks.find((t) => t.id === idTask);
+    if (!task) return;
+
+    const { canChangeStatus } = getTaskPermission(task);
+    if (!canChangeStatus) {
+      // guard ekstra kalau ada manipulasi di UI
+      alert("Anda tidak punya izin mengubah status task ini.");
+      return;
+    }
 
     try {
       const updated = await taskSvc.setStatus(idTask, status);
@@ -403,32 +475,31 @@ const TaskPage: React.FC = () => {
     }
   };
 
+  // 🔐 Buka modal edit:
+  // Owner/Manager dan Leader (untuk task di divisinya) bisa edit semua field.
+  // Member biasa tidak bisa buka modal sama sekali.
   const handleRowClick = (task: Task) => {
-    const assignee = task.assigneeId
-      ? memberMap.get(task.assigneeId)
-      : undefined;
-    const assigneeDivision = assignee
-      ? divisionMap.get(assignee.divisionId)
-      : undefined;
-
-    const isLeaderForThisTask =
-      !!currentUserId &&
-      !!assigneeDivision &&
-      assigneeDivision.coordinatorId === currentUserId;
-
-    if (!canManageAll && !isLeaderForThisTask) return;
+    const { canEditTask } = getTaskPermission(task);
+    if (!canEditTask) return;
 
     setEditingTask(task);
+    // sekarang: yang bisa buka modal (owner/manager & leader) dapat full edit
+    setEditPermission({
+      canEditAllFields: true,
+      canChangeStatusOnly: false,
+    });
     setOpenEdit(true);
   };
 
+  // 🧹 Hapus task: TANPA confirm popup, dan modal otomatis tertutup
   const handleDeleteTask = async (idTask: number) => {
     if (!taskSvc) return;
-    if (!window.confirm("Yakin ingin menghapus task ini?")) return;
 
     try {
       await taskSvc.remove(idTask);
       setTasks((prev) => prev.filter((t) => t.id !== idTask));
+      setOpenEdit(false);
+      setEditingTask(null);
     } catch (err) {
       const message =
         err instanceof Error
@@ -458,8 +529,17 @@ const TaskPage: React.FC = () => {
     }
   };
 
+  // 🔐 Simpan edit dari modal:
+  // Sekali lagi cek: hanya Owner/Manager atau Leader divisi task ini.
   const handleSubmitEdit = async (input: CreateTaskInput) => {
     if (!taskSvc || !editingTask) return;
+
+    const { canEditTask } = getTaskPermission(editingTask);
+    if (!canEditTask) {
+      alert("Anda tidak punya izin mengubah task ini.");
+      return;
+    }
+
     try {
       const updated = await taskSvc.update(editingTask.id, input);
       setTasks((prev) =>
@@ -511,7 +591,6 @@ const TaskPage: React.FC = () => {
     <div
       className="
         max-w-6xl mx-auto px-4 pt-6 pb-10 space-y-6
-        
       "
     >
       {/* ===== Header + filter ===== */}
@@ -647,17 +726,10 @@ const TaskPage: React.FC = () => {
                       ? divisionMap.get(assignee.divisionId)
                       : undefined;
 
-                    const isLeaderForThisTask =
-                      !!currentUserId &&
-                      !!assigneeDivision &&
-                      assigneeDivision.coordinatorId === currentUserId;
+                    const { canEditTask, canChangeStatus } =
+                      getTaskPermission(t);
 
-                    const isAssignee =
-                      !!currentMemberId && assignee?.id === currentMemberId;
-
-                    const rowClickable = canManageAll || isLeaderForThisTask;
-                    const canChangeThisStatus =
-                      canManageAll || isLeaderForThisTask || isAssignee;
+                    const rowClickable = canEditTask;
 
                     return (
                       <tr
@@ -732,7 +804,7 @@ const TaskPage: React.FC = () => {
                           <div className="inline-flex min-w-[140px] justify-center">
                             <StatusDropdown
                               status={t.status}
-                              canChange={canChangeThisStatus}
+                              canChange={canChangeStatus}
                               onChange={(newStatus) =>
                                 handleStatusChange(t.id, newStatus)
                               }
@@ -769,7 +841,7 @@ const TaskPage: React.FC = () => {
         open={openAdd}
         onClose={() => setOpenAdd(false)}
         onSubmit={handleSubmitAdd}
-        members={members}
+        members={membersForAdd}
         divisions={divisions}
         users={users}
       />
@@ -783,6 +855,8 @@ const TaskPage: React.FC = () => {
         members={members}
         divisions={divisions}
         users={users}
+        canEditAllFields={editPermission.canEditAllFields}
+        canChangeStatusOnly={editPermission.canChangeStatusOnly}
       />
     </div>
   );

@@ -1,4 +1,3 @@
-// src/components/EditTaskModal.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, cubicBezier } from "framer-motion";
 import { ListTodo, Trash2, ChevronDown } from "lucide-react";
@@ -19,6 +18,14 @@ interface EditTaskModalProps {
   onClose: () => void;
   onSubmit: (data: CreateTaskInput) => void;
   onDelete: (id: number) => void;
+
+  /** 
+   * canEditAllFields = true → boleh edit semua field & delete
+   * canChangeStatusOnly = true → hanya boleh ganti status
+   * Jika keduanya undefined → default full edit.
+   */
+  canEditAllFields?: boolean;
+  canChangeStatusOnly?: boolean;
 }
 
 const easeOutQuint = cubicBezier(0.22, 1, 0.36, 1);
@@ -39,6 +46,8 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
   onClose,
   onSubmit,
   onDelete,
+  canEditAllFields,
+  canChangeStatusOnly,
 }) => {
   const [form, setForm] = useState<CreateTaskInput>({
     title: "",
@@ -58,6 +67,10 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
   const titleRef = useRef<HTMLInputElement>(null);
   const assigneeRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
+
+  // permission yang berlaku di modal
+  const fullEdit = canEditAllFields ?? true; // default: full edit
+  const canChangeStatus = fullEdit || !!canChangeStatusOnly;
 
   const userMap = useMemo(() => {
     const map = new Map<string, IRegisterResponse>();
@@ -138,6 +151,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
   const setField =
     (key: keyof CreateTaskInput) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      if (!fullEdit) return; // status-only mode tidak boleh ubah field lain
       setForm((prev) => ({ ...prev, [key]: e.target.value }));
       setError("");
     };
@@ -164,6 +178,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
   }, [members, userMap, divisionMap, assigneeInput]);
 
   const selectAssignee = (member: Member, label: string) => {
+    if (!fullEdit) return;
     setForm((prev) => ({ ...prev, assigneeId: member.id }));
     setAssigneeInput(label);
     setAssigneeOpen(false);
@@ -191,6 +206,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!canSubmit) {
       if (!trimmedTitle) {
         setError("Task title is required.");
@@ -268,7 +284,9 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                   Edit Task
                 </h3>
                 <p className="text-[11px] sm:text-xs text-gray-500">
-                  Update task details, status, and assignee.
+                  {fullEdit
+                    ? "Update task details, status, and assignee."
+                    : "Anda hanya dapat mengubah status task ini."}
                 </p>
               </div>
             </div>
@@ -292,12 +310,15 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                   value={form.title}
                   onChange={setField("title")}
                   placeholder="e.g. Prepare design system, QA sprint #5"
+                  disabled={!fullEdit}
                   className={`w-full rounded-md border px-3 py-2 text-sm outline-none transition bg-gray-100
                     ${
                       !trimmedTitle && error
                         ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
                         : "border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
-                    }`}
+                    }
+                    ${!fullEdit ? "opacity-70 cursor-not-allowed" : ""}
+                  `}
                 />
               </div>
 
@@ -310,7 +331,10 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                   value={form.description || ""}
                   onChange={setField("description")}
                   placeholder="Short description of this task (optional)"
-                  className="w-full resize-none rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  disabled={!fullEdit}
+                  className={`w-full resize-none rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200
+                    ${!fullEdit ? "opacity-70 cursor-not-allowed" : ""}
+                  `}
                   rows={3}
                 />
               </div>
@@ -329,16 +353,18 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (!canChangeStatus) return;
                         setStatusOpen((prev) => !prev);
                       }}
                       className={`
                         w-full flex items-center justify-between rounded-md px-3 py-2 text-sm 
                         border bg-gray-100 transition
                         ${
-                          statusOpen
+                          statusOpen && canChangeStatus
                             ? "border-amber-500 ring-2 ring-amber-200"
                             : "border-gray-300 hover:border-amber-400"
                         }
+                        ${!canChangeStatus ? "opacity-70 cursor-not-allowed" : ""}
                       `}
                     >
                       <span>
@@ -356,7 +382,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                       />
                     </button>
 
-                    {statusOpen && (
+                    {statusOpen && canChangeStatus && (
                       <div
                         className="
                           absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 
@@ -370,6 +396,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                               key={opt.value}
                               type="button"
                               onMouseDown={() => {
+                                if (!canChangeStatus) return;
                                 setForm((prev) => ({
                                   ...prev,
                                   status: opt.value,
@@ -407,7 +434,10 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                     type="date"
                     value={form.startDate || ""}
                     onChange={setField("startDate")}
-                    className="w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                    disabled={!fullEdit}
+                    className={`w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200
+                      ${!fullEdit ? "opacity-70 cursor-not-allowed" : ""}
+                    `}
                   />
                 </div>
 
@@ -420,12 +450,15 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                     type="date"
                     value={form.dueDate || ""}
                     onChange={setField("dueDate")}
+                    disabled={!fullEdit}
                     className={`w-full rounded-md border px-3 py-2 text-sm outline-none bg-gray-100 transition
                       ${
                         isDateError
                           ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
                           : "border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
-                      }`}
+                      }
+                      ${!fullEdit ? "opacity-70 cursor-not-allowed" : ""}
+                    `}
                   />
                   {isDateError && (
                     <p className="mt-1 text-[11px] text-rose-600">
@@ -444,22 +477,29 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                   type="text"
                   value={assigneeInput}
                   onChange={(e) => {
+                    if (!fullEdit) return;
                     setAssigneeInput(e.target.value);
                     setAssigneeOpen(true);
                     setForm((prev) => ({ ...prev, assigneeId: undefined }));
                     setError("");
                   }}
-                  onFocus={() => setAssigneeOpen(true)}
+                  onFocus={() => {
+                    if (!fullEdit) return;
+                    setAssigneeOpen(true);
+                  }}
                   placeholder="Search member by name, email, or division"
+                  disabled={!fullEdit}
                   className={`w-full rounded-md border bg-gray-100 px-3 py-2 text-sm outline-none transition
                     ${
                       !form.assigneeId && error
                         ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
                         : "border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
-                    }`}
+                    }
+                    ${!fullEdit ? "opacity-70 cursor-not-allowed" : ""}
+                  `}
                 />
 
-                {assigneeOpen && (
+                {assigneeOpen && fullEdit && (
                   <div className="absolute z-50 mt-1 w-full max-h-60 overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
                     {members.length === 0 ? (
                       <div className="px-3 py-2 text-xs text-gray-500">
@@ -511,22 +551,24 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
 
               {/* Footer */}
               <div className="mt-4 flex justify-between gap-2">
-                {/* Delete */}
-                <button
-                  type="button"
-                  onClick={() => onDelete(task.id)}
-                  className="
-                    inline-flex items-center gap-2 rounded border border-rose-200 
-                    bg-rose-50 px-4 py-2 text-xs sm:text-sm font-semibold text-rose-600
-                    shadow-sm hover:bg-rose-100 hover:-translate-y-[1px] active:translate-y-0 
-                    active:scale-[0.99] transition
-                  "
-                >
-                  <Trash2 size={14} />
-                  <span>Delete Task</span>
-                </button>
+                {/* Delete muncul jika fullEdit = true (owner/manager & leader sesuai prop dari parent) */}
+                {fullEdit && (
+                  <button
+                    type="button"
+                    onClick={() => onDelete(task.id)}
+                    className="
+                      inline-flex items-center gap-2 rounded border border-rose-200 
+                      bg-rose-50 px-4 py-2 text-xs sm:text-sm font-semibold text-rose-600
+                      shadow-sm hover:bg-rose-100 hover:-translate-y-[1px] active:translate-y-0 
+                      active:scale-[0.99] transition
+                    "
+                  >
+                    <Trash2 size={14} />
+                    <span>Delete Task</span>
+                  </button>
+                )}
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 ml-auto">
                   <button
                     type="button"
                     onClick={onClose}
@@ -536,7 +578,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                   </button>
                   <button
                     type="submit"
-                    disabled={submitting || !canSubmit}
+                    disabled={submitting || !canSubmit || !canChangeStatus}
                     className="inline-flex items-center gap-2 rounded-md bg-amber-500 px-5 py-2 text-sm font-extrabold text-black shadow-sm ring-1 ring-amber-400 transition hover:-translate-y-[1px] hover:bg-amber-400 disabled:opacity-60"
                   >
                     Save Changes

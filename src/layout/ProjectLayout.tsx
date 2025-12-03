@@ -142,7 +142,7 @@ const ProjectSidebar: React.FC<SidebarProps> = ({ isOpen, projectId }) => {
       path: `/projects/${projectId}/board`,
       icon: KanbanSquare,
     },
-    { name: "My Task", path: `/projects/${projectId}/my`, icon: CheckSquare },
+    { name: "My Task", path: `/projects/${projectId}/mytask`, icon: CheckSquare },
   ];
 
   const logoutNow = () => {

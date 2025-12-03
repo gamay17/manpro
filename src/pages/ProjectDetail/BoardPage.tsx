@@ -34,6 +34,11 @@ const columnHeaderClass: Record<TaskStatus, string> = {
   done: "bg-emerald-200 text-emerald-800 border-emerald-200",
 };
 
+type EditPermission = {
+  canEditAllFields: boolean;
+  canChangeStatusOnly: boolean;
+};
+
 const BoardPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const projectId = Number(id);
@@ -57,6 +62,10 @@ const BoardPage: React.FC = () => {
   const [openAdd, setOpenAdd] = React.useState(false);
   const [openEdit, setOpenEdit] = React.useState(false);
   const [editingTask, setEditingTask] = React.useState<Task | null>(null);
+  const [editPermission, setEditPermission] = React.useState<EditPermission>({
+    canEditAllFields: false,
+    canChangeStatusOnly: false,
+  });
 
   const [divisionFilter, setDivisionFilter] =
     React.useState<DivisionFilterValue>("all");
@@ -121,6 +130,38 @@ const BoardPage: React.FC = () => {
     return map;
   }, [divisions]);
 
+  // ======= PERMISSION HELPER (sama kayak TaskPage) ======= //
+  const getTaskPermission = React.useCallback(
+    (task: Task) => {
+      const assignee = task.assigneeId
+        ? memberMap.get(task.assigneeId)
+        : undefined;
+      const assigneeDivision = assignee
+        ? divisionMap.get(assignee.divisionId)
+        : undefined;
+
+      const isLeaderForThisTask =
+        !!currentUserId &&
+        !!assigneeDivision &&
+        assigneeDivision.coordinatorId === currentUserId;
+
+      const isAssignee = !!currentMemberId && assignee?.id === currentMemberId;
+
+      const canEditTask = canManageAll || isLeaderForThisTask;
+      const canChangeStatus = canManageAll || isLeaderForThisTask || isAssignee;
+      const canDrag = canChangeStatus;
+
+      return {
+        isLeaderForThisTask,
+        isAssignee,
+        canEditTask,
+        canChangeStatus,
+        canDrag,
+      };
+    },
+    [canManageAll, currentUserId, currentMemberId, memberMap, divisionMap]
+  );
+
   const isLeaderGlobal = React.useMemo(
     () =>
       !!currentUserId &&
@@ -134,7 +175,7 @@ const BoardPage: React.FC = () => {
   React.useEffect(() => {
     let cancelled = false;
 
-    (async () => {
+    const load = async () => {
       try {
         setLoading(true);
         setLoadError(null);
@@ -247,12 +288,16 @@ const BoardPage: React.FC = () => {
                 updatedAt: u.updatedAt,
               }));
               if (!cancelled) setUsers(cleaned);
-            } else if (!cancelled) setUsers([]);
-          } else if (!cancelled) setUsers([]);
+            } else if (!cancelled) {
+              setUsers([]);
+            }
+          } else if (!cancelled) {
+            setUsers([]);
+          }
         } catch {
           if (!cancelled) setUsers([]);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         if (!cancelled) {
           const message =
             err instanceof Error ? err.message : "Failed to load project board";
@@ -261,7 +306,9 @@ const BoardPage: React.FC = () => {
       } finally {
         if (!cancelled) setLoading(false);
       }
-    })();
+    };
+
+    load();
 
     return () => {
       cancelled = true;
@@ -274,14 +321,13 @@ const BoardPage: React.FC = () => {
 
     return tasks.filter((t) => {
       const assignee = t.assigneeId ? memberMap.get(t.assigneeId) : undefined;
-      if (!assignee) return false;
-
-      if (typeof divisionFilter === "number") {
-        return assignee.divisionId === divisionFilter;
-      }
 
       if (divisionFilter === "no-division") {
-        return !assignee.divisionId;
+        return !assignee || !assignee.divisionId;
+      }
+
+      if (typeof divisionFilter === "number") {
+        return assignee?.divisionId === divisionFilter;
       }
 
       return true;
@@ -292,10 +338,19 @@ const BoardPage: React.FC = () => {
   const handleStatusChange = async (idTask: number, status: TaskStatus) => {
     if (!taskSvc) return;
 
+    const task = tasks.find((t) => t.id === idTask);
+    if (!task) return;
+
+    const { canChangeStatus } = getTaskPermission(task);
+    if (!canChangeStatus) {
+      alert("Anda tidak punya izin mengubah status task ini.");
+      return;
+    }
+
     try {
       const updated = await taskSvc.setStatus(idTask, status);
       setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
-    } catch (err) {
+    } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Gagal mengubah status task";
       alert(message);
@@ -304,6 +359,12 @@ const BoardPage: React.FC = () => {
 
   // DRAG HANDLERS
   const handleDragStart = (taskId: number) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    const { canDrag } = getTaskPermission(task);
+    if (!canDrag) return;
+
     setDraggedTaskId(taskId);
     setIsDragging(true);
   };
@@ -314,7 +375,10 @@ const BoardPage: React.FC = () => {
     setDragOverStatus(null);
   };
 
-  const handleColumnDragOver = (e: React.DragEvent, status: TaskStatus) => {
+  const handleColumnDragOver = (
+    e: React.DragEvent<HTMLDivElement>,
+    status: TaskStatus
+  ) => {
     e.preventDefault();
     setDragOverStatus(status);
   };
@@ -326,7 +390,18 @@ const BoardPage: React.FC = () => {
     }
 
     const task = tasks.find((t) => t.id === draggedTaskId);
-    if (!task || task.status === status) {
+    if (!task) {
+      handleDragEnd();
+      return;
+    }
+
+    const { canChangeStatus } = getTaskPermission(task);
+    if (!canChangeStatus) {
+      handleDragEnd();
+      return;
+    }
+
+    if (task.status === status) {
       handleDragEnd();
       return;
     }
@@ -337,35 +412,30 @@ const BoardPage: React.FC = () => {
     handleDragEnd();
   };
 
+  // ===== BUKA MODAL EDIT =====
   const handleCardClick = (task: Task) => {
-    if (isDragging) return; // jangan buka modal saat dragging
+    if (isDragging) return;
 
-    const assignee = task.assigneeId
-      ? memberMap.get(task.assigneeId)
-      : undefined;
-    const assigneeDivision = assignee
-      ? divisionMap.get(assignee.divisionId)
-      : undefined;
-
-    const isLeaderForThisTask =
-      !!currentUserId &&
-      !!assigneeDivision &&
-      assigneeDivision.coordinatorId === currentUserId;
-
-    if (!canManageAll && !isLeaderForThisTask) return;
+    const { canEditTask, isLeaderForThisTask } = getTaskPermission(task);
+    if (!canEditTask) return;
 
     setEditingTask(task);
+    setEditPermission({
+      canEditAllFields: canManageAll, // owner/manager
+      canChangeStatusOnly: !canManageAll && isLeaderForThisTask, // leader
+    });
     setOpenEdit(true);
   };
 
+  // ===== DELETE TASK (tanpa confirm, modal auto-close) =====
   const handleDeleteTask = async (idTask: number) => {
     if (!taskSvc) return;
-    if (!window.confirm("Yakin ingin menghapus task ini?")) return;
 
     try {
       await taskSvc.remove(idTask);
       setTasks((prev) => prev.filter((t) => t.id !== idTask));
-    } catch (err) {
+      setOpenEdit(false);
+    } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Gagal menghapus task";
       alert(message);
@@ -382,7 +452,8 @@ const BoardPage: React.FC = () => {
     try {
       const created = await taskSvc.create(input);
       setTasks((prev) => [...prev, created]);
-    } catch (err) {
+      setOpenAdd(false);
+    } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Gagal menambah task";
       alert(message);
@@ -391,10 +462,18 @@ const BoardPage: React.FC = () => {
 
   const handleSubmitEdit = async (input: CreateTaskInput) => {
     if (!taskSvc || !editingTask) return;
+
+    const { canEditTask } = getTaskPermission(editingTask);
+    if (!canEditTask) {
+      alert("Anda tidak punya izin mengubah task ini.");
+      return;
+    }
+
     try {
       const updated = await taskSvc.update(editingTask.id, input);
       setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
-    } catch (err) {
+      setOpenEdit(false);
+    } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Gagal menyimpan perubahan task";
       alert(message);
@@ -433,7 +512,6 @@ const BoardPage: React.FC = () => {
   }
 
   const totalTasks = filteredTasks.length;
-
   const statuses: TaskStatus[] = ["todo", "in-progress", "review", "done"];
 
   return (
@@ -457,7 +535,7 @@ const BoardPage: React.FC = () => {
             className="ml-0"
           />
 
-          {(canManageAll || isLeaderGlobal) && (
+          {canCreateTask && (
             <button
               onClick={handleAddTask}
               className="inline-flex items-center gap-2 rounded-2xl bg-primary px-4 py-2.5
@@ -541,26 +619,15 @@ const BoardPage: React.FC = () => {
                           ? divisionMap.get(assignee.divisionId)
                           : undefined;
 
-                        const isLeaderForThisTask =
-                          !!currentUserId &&
-                          !!assigneeDivision &&
-                          assigneeDivision.coordinatorId === currentUserId;
-
-                        const isAssignee =
-                          !!currentMemberId && assignee?.id === currentMemberId;
-
-                        const canDragThisTask =
-                          canManageAll || isLeaderForThisTask || isAssignee;
+                        const { canDrag, canEditTask } = getTaskPermission(t);
 
                         const isRecentlyDropped = lastDroppedTaskId === t.id;
 
                         return (
                           <div
                             key={t.id}
-                            draggable={canDragThisTask}
-                            onDragStart={() =>
-                              canDragThisTask && handleDragStart(t.id)
-                            }
+                            draggable={canDrag}
+                            onDragStart={() => handleDragStart(t.id)}
                             onDragEnd={handleDragEnd}
                             className={`group rounded-2xl border px-3 py-3
                               bg-white/95
@@ -568,7 +635,7 @@ const BoardPage: React.FC = () => {
                               transition-all duration-200 ease-out
                               hover:shadow-md hover:-translate-y-[1px]
                               ${
-                                canDragThisTask
+                                canDrag
                                   ? "cursor-grab active:cursor-grabbing"
                                   : "cursor-default"
                               }
@@ -586,7 +653,7 @@ const BoardPage: React.FC = () => {
                                   : "No division"}
                               </span>
 
-                              {(canManageAll || isLeaderForThisTask) && (
+                              {canEditTask && (
                                 <button
                                   type="button"
                                   onClick={(e) => {
@@ -675,6 +742,8 @@ const BoardPage: React.FC = () => {
         members={members}
         divisions={divisions}
         users={users}
+        canEditAllFields={editPermission.canEditAllFields}
+        canChangeStatusOnly={editPermission.canChangeStatusOnly}
       />
     </div>
   );

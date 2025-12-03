@@ -13,6 +13,8 @@ import SettingPage from "../pages/users/SettingPage";
 import DashboardPage from "../pages/ProjectDetail/DashboardPage";
 import TaskPage from "../pages/ProjectDetail/TaskPage";
 import BoardPage from "../pages/ProjectDetail/BoardPage";
+import MyTaskPage from "../pages/ProjectDetail/MyTaskPage";
+
 
 import ProtectedRoute from "./ProtectedRoute";
 import PublicRoute from "./PublicRoute";
@@ -57,6 +59,7 @@ const Router = () => {
           <Route index element={<DashboardPage />} />
           <Route path="tasks" element={<TaskPage />} />
           <Route path="Board" element={<BoardPage/>}/>
+          <Route path="mytask" element={<MyTaskPage/>}/>
           {/* nanti bisa tambahkan sub-page lain, misalnya */}
           {/* <Route path="members" element={<ProjectMembersPage />} /> */}
         </Route>
