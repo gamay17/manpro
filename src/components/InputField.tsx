@@ -32,7 +32,7 @@ const InputField: React.FC<InputFieldProps> = ({
         onBlur={onBlur}
         className="font-inter border-1 border-primary bg-tertiary text-quinary px-3 py-2 
              rounded-xl w-full box-border shadow-sm transition-all duration-200 
-             focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
       />
     </div>
   );

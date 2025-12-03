@@ -1,5 +1,5 @@
 import { useLocation } from "react-router-dom";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 interface HeaderProps {
   isOpen: boolean;
@@ -18,21 +18,37 @@ const Header: React.FC<HeaderProps> = ({ isOpen, setIsOpen }) => {
   const currentPage = pageTitles[location.pathname] || "Home";
 
   return (
-    <header className="w-full flex items-center justify-between bg-secondary text-primary px-2 sm:px-4 md:px-6 py-2 border-b border-quinary/30">
-      <div className="flex items-center gap-3 md:gap-4 flex-wrap">
+    <header
+      className="
+        sticky top-0 z-20 w-full
+        flex items-center justify-between
+        bg-gradient-to-r from-white/95 to-white/80
+        backdrop-blur-md
+        px-4 py-2.5 border-b border-slate-200 shadow-sm
+      "
+    >
+      <div className="flex items-center gap-4">
         {/* Toggle Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center justify-center w-10 h-10 bg-secondary text-quinary rounded-full hover:bg-primary transition-all duration-200"
+          className="
+            flex items-center justify-center w-11 h-11
+            bg-white border border-slate-200 rounded-full
+            shadow-sm hover:bg-amber-50 transition
+          "
         >
-          {isOpen ? <ChevronLeft size={22} /> : <ChevronRight size={22} />}
+          {isOpen ? <PanelLeftClose size={22} /> : <PanelLeftOpen size={22} />}
         </button>
 
-        {/* Page Title */}
-        <h1 className="text-lg md:text-xl font-bold font-poppins whitespace-nowrap">
-          ManPro{" "}
-          <span className="text-sm font-medium opacity-80">/ {currentPage}</span>
-        </h1>
+        {/* App + Page Title */}
+        <div className="flex flex-col">
+          <span className="text-sm md:text-base font-semibold text-slate-600">
+            ManPro
+          </span>
+          <h1 className="text-base md:text-lg font-bold text-slate-900">
+            {currentPage}
+          </h1>
+        </div>
       </div>
     </header>
   );

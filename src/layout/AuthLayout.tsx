@@ -1,8 +1,11 @@
-import React, { type JSX } from "react";
-import { Outlet } from "react-router-dom";
+import React from "react";
+import { Outlet, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import Background from "../assets/image/background.png";
 
-const AuthLayout: React.FC = (): JSX.Element => {
+const AuthLayout: React.FC = () => {
+  const location = useLocation();
+
   return (
     <div
       className="
@@ -16,22 +19,48 @@ const AuthLayout: React.FC = (): JSX.Element => {
         backgroundRepeat: "no-repeat",
       }}
     >
-      {/* Lapisan gradasi + blur ringan agar kontras dan lembut */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-black/30 backdrop-blur-[3px]" />
+      {/* Overlay + blur */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-black/40 backdrop-blur-[3px]" />
 
-      {/* Card utama (tempat form) */}
+      {/* Card utama (semua halaman auth masuk ke sini lewat <Outlet />) */}
       <div
         className="
           relative z-10 w-full max-w-md sm:max-w-lg 
-          bg-secondary/75 backdrop-blur-md 
-          rounded-3xl border border-tertiary
+          bg-secondary backdrop-blur-md 
+          rounded-3xl border border-tertiary/70
           shadow-2xl
-          p-6 sm:p-10 
-          flex flex-col items-center justify-center
+          px-6 py-7 sm:px-10 sm:py-9 
+          flex flex-col justify-center
           transition-all duration-300
         "
       >
-        <Outlet />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              transition: {
+                duration: 0.8,
+                ease: [0.22, 1, 0.36, 1],
+              },
+            }}
+            exit={{
+              opacity: 0,
+              y: -20,
+              scale: 0.98,
+              transition: {
+                duration: 0.4,
+                ease: [0.65, 0, 0.35, 1],
+              },
+            }}
+            className="w-full"
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );

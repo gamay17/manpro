@@ -39,10 +39,10 @@ const Popup = ({ onLogout, onClose }: PopupProps) => {
 
   const handleLogoutClick = async () => {
     const confirmed = await AlertDialog.confirm({
-      title: "Yakin ingin logout?",
-      text: "Anda akan keluar dari akun ini.",
-      confirmText: "Ya, logout",
-      cancelText: "Batal",
+      title: "Are you sure you want to log out?",
+      text: "You will be signed out from this account.",
+      confirmText: "Yes, log out",
+      cancelText: "Cancel",
       confirmColor: "#ef4444",
       icon: "warning",
     });

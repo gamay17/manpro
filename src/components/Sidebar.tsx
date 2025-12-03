@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Home, CircleUser, Settings, Folders } from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { House, Settings2, FolderKanban } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
 import LogoutPopup from "../components/Popup";
 import { useAuth } from "../hooks/useAuth";
 
@@ -11,15 +11,12 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   const [showPopup, setShowPopup] = useState(false);
   const { user, logout } = useAuth();
-  const location = useLocation();
   const navigate = useNavigate();
 
   const menus = [
-    { name: "Home", icon: Home, path: "/home" },
-    { name: "Project", icon: Folders, path: "/projects" },
+    { name: "Home", icon: House, path: "/home" },
+    { name: "Project", icon: FolderKanban, path: "/projects" },
   ];
-
-  const isActiveMenu = (path: string) => location.pathname === path;
 
   const handleLogout = () => {
     logout();
@@ -27,125 +24,160 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
     navigate("/login");
   };
 
-  return (
-    <div
-      className={`h-screen flex flex-col text-quinary font-poppins font-bold transition-[width] duration-500 ease-in-out  
-    ${isOpen ? "w-64" : "w-14"} 
-    bg-gradient-to-b from-[#FFB300] to-[#FF8C00]
-  `}
-    >
-      <div
-        onClick={() => setShowPopup(!showPopup)}
-        className={`group flex items-center relative cursor-pointer 
-    ${
-      isOpen ? "gap-3 justify-start px-3 py-3" : "justify-center py-3"
-    } hover:text-secondary
-  `}
-      >
-        <div className="flex items-center  ">
-          <CircleUser
-            size={26}
-            strokeWidth={3}
-            className="text-quinary group-hover:text-secondary"
-          />
+  const initial =
+    (user?.name && user.name.trim().charAt(0).toUpperCase()) || "U";
 
-          {isOpen && (
-            <div className="flex flex-col ml-4 mt-1 overflow-hidden">
-              <span className="text-xl font-bold truncate">
-                {user?.name || "User"}
+  return (
+    <>
+      <aside
+        className={`
+          h-screen flex flex-col
+          transition-all duration-500 ease-in-out
+          ${isOpen ? "w-64" : "w-16"}
+          bg-gradient-to-b from-amber-400 via-amber-500 to-orange-500
+          backdrop-blur-[2px] bg-white/5
+          border-r border-amber-300/60
+          shadow-[0_18px_45px_rgba(15,23,42,0.25)]
+          rounded-br-xl
+        `}
+      >
+        {/* Header user */}
+        <div
+          onClick={() => setShowPopup(!showPopup)}
+          className={`cursor-pointer ${isOpen ? "px-4 pt-4" : "px-2 pt-4"}`}
+        >
+          <div className="flex items-center gap-3">
+            {/* Avatar huruf modern */}
+            <div
+              className="
+                h-11 w-11 rounded-full
+                bg-gradient-to-br from-white to-amber-100
+                border border-white/70 shadow-sm
+                flex items-center justify-center
+              "
+            >
+              <span className="text-lg font-bold text-amber-700">
+                {initial}
               </span>
             </div>
-          )}
-        </div>
-        <div className="absolute bottom-0 left-2 right-2 border-b-3 border-quinary"></div>
-      </div>
 
-      {showPopup && (
-        <LogoutPopup
-          onLogout={handleLogout}
-          onClose={() => setShowPopup(false)}
-        />
-      )}
-
-      <div className="flex-grow flex flex-col gap-2 mt-4">
-        {menus.map((menu, index) => {
-          const Icon = menu.icon;
-          const active = isActiveMenu(menu.path);
-
-          return (
-            <div key={index} className="mx-2">
-              <Link
-                to={menu.path}
-                className={`group flex items-center cursor-pointer p-2 rounded transition-colors
-                  ${isOpen ? "gap-3 px-3 justify-start" : "justify-center"}
-                  ${active ? "bg-secondary text-primary" : "hover:bg-secondary"}
-                `}
-              >
-                <Icon
-                  size={22}
-                  strokeWidth={3}
-                  className={`${
-                    active ? "text-primary" : "group-hover:text-primary"
-                  }`}
-                />
-                <span
-                  className={`font-bold font-poppins whitespace-nowrap overflow-hidden
-                    ${
-                      isOpen
-                        ? active
-                          ? "opacity-100 translate-x-0 text-primary"
-                          : "opacity-100 translate-x-0 text-quinary group-hover:text-primary"
-                        : "opacity-0 -translate-x-5 w-0"
-                    }
-                  `}
-                >
-                  {menu.name}
+            {isOpen && (
+              <div className="overflow-hidden">
+                <span className="text-lg font-bold text-slate-900 truncate">
+                  {user?.name || "User"}
                 </span>
-              </Link>
-            </div>
-          );
-        })}
-      </div>
+              </div>
+            )}
+          </div>
 
-      <div className="border-t border-quinary">
-        <div className="mx-2 my-4">
-          <Link
-            to="/settings"
-            className={`group flex items-center cursor-pointer p-2 rounded transition-colors
-              ${isOpen ? "gap-3 px-3 justify-start" : "justify-center"}
-              ${
-                isActiveMenu("/settings")
-                  ? "bg-secondary text-primary"
-                  : "hover:bg-secondary"
-              }
-            `}
-          >
-            <Settings
-              size={22}
-              strokeWidth={3}
-              className={`${
-                isActiveMenu("/settings")
-                  ? "text-primary"
-                  : "group-hover:text-primary"
-              }`}
-            />
-            <span
-              className={`font-bold font-poppins whitespace-nowrap overflow-hidden ease-in-out
-                ${
-                  isOpen
-                    ? isActiveMenu("/settings")
-                      ? "opacity-100 translate-x-0 text-primary"
-                      : "opacity-100 translate-x-0 text-quinary group-hover:text-primary"
-                    : "opacity-0 -translate-x-5 w-0"
-                }
-              `}
-            >
-              Settings
-            </span>
-          </Link>
+          <div className="mt-3 h-px bg-white/60" />
         </div>
-      </div>
-    </div>
+
+        {showPopup && (
+          <LogoutPopup
+            onLogout={handleLogout}
+            onClose={() => setShowPopup(false)}
+          />
+        )}
+
+        {/* Menu utama */}
+        <div className="flex-grow flex flex-col gap-1 mt-4">
+          {menus.map((menu) => {
+            const Icon = menu.icon;
+
+            return (
+              <NavLink
+                key={menu.path}
+                to={menu.path}
+                className={({ isActive }) =>
+                  `
+                  group flex items-center rounded-xl mx-2 transition
+                  ${isOpen ? "px-3 py-2.5 gap-3" : "justify-center py-2.5"}
+                  ${
+                    isActive
+                      ? "bg-white text-amber-700 shadow-md border border-amber-100"
+                      : "bg-white/10 hover:bg-white/25 text-slate-900"
+                  }
+                `
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <Icon
+                      size={22}
+                      className={
+                        isActive
+                          ? "text-amber-600"
+                          : "text-slate-800 group-hover:text-slate-900"
+                      }
+                    />
+
+                    {isOpen && (
+                      <span
+                        className={
+                          isActive
+                            ? "font-semibold text-base truncate text-amber-700"
+                            : "font-semibold text-base truncate text-slate-900 group-hover:text-slate-900"
+                        }
+                      >
+                        {menu.name}
+                      </span>
+                    )}
+                  </>
+                )}
+              </NavLink>
+            );
+          })}
+        </div>
+
+        {/* Settings */}
+        <div className="border-t border-white/50 mt-2 pt-2">
+          <NavLink
+            to="/settings"
+            className={({ isActive }) =>
+              `
+              group flex items-center rounded-xl mx-2 my-3 transition
+              ${isOpen ? "px-3 py-2.5 gap-3" : "justify-center py-2.5"}
+              ${
+                isActive
+                  ? "bg-white text-amber-700 shadow-md border border-amber-100"
+                  : "bg-white/10 hover:bg-white/25 text-slate-900"
+              }
+            `
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <Settings2
+                  size={22}
+                  className={
+                    isActive
+                      ? "text-amber-600"
+                      : "text-slate-800 group-hover:text-slate-900"
+                  }
+                />
+
+                {isOpen && (
+                  <span
+                    className={
+                      isActive
+                        ? "font-semibold text-base truncate text-amber-700"
+                        : "font-semibold text-base truncate text-slate-900 group-hover:text-slate-900"
+                    }
+                  >
+                    Settings
+                  </span>
+                )}
+              </>
+            )}
+          </NavLink>
+        </div>
+
+        <div className="px-3 pb-4 text-[11px] text-slate-100/90">
+          {isOpen && "Management Project • v1.0"}
+        </div>
+      </aside>
+    </>
   );
 };
 

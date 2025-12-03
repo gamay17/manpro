@@ -1,14 +1,16 @@
+// src/pages/settings/SettingPage.tsx
 import React, { useState } from "react";
-import { useAuth } from "../hooks/useAuth";
-import Button from "../components/Button";
-import InputField from "../components/InputField";
-import { AlertDialog } from "../components/AlertDialog";
-import { CircleUser } from "lucide-react";
-import { authService } from "../service/authService";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
+import Button from "../../components/Button";
+import InputField from "../../components/InputField";
+import { AlertDialog } from "../../components/AlertDialog";
+import { authService } from "../../service/auth.service";
 import toast from "react-hot-toast";
 
 const SettingPage: React.FC = () => {
   const { user, logout, updateUser } = useAuth();
+  const navigate = useNavigate();
 
   const [newName, setNewName] = useState(user?.name || "");
   const [newEmail, setNewEmail] = useState(user?.email || "");
@@ -22,13 +24,16 @@ const SettingPage: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-[#FFB300] to-[#FF8C00]">
-        <p className="text-lg text-white font-semibold drop-shadow-lg">
+      <div className="flex items-center justify-center min-h-[70vh]">
+        <p className="text-base sm:text-lg text-slate-700 font-semibold">
           No user data available.
         </p>
       </div>
     );
   }
+
+  const initial =
+    (user.name && user.name.trim().charAt(0).toUpperCase()) || "U";
 
   const validateProfile = () => {
     if (!newName.trim()) {
@@ -65,8 +70,6 @@ const SettingPage: React.FC = () => {
     return true;
   };
 
-  // --- Handlers ---
-
   const handleSaveWithConfirm = async () => {
     if (!validateProfile()) return;
 
@@ -82,7 +85,7 @@ const SettingPage: React.FC = () => {
       confirmText: "Yes, save",
       cancelText: "Cancel",
       confirmColor: "#3b82f6",
-      icon: "question",
+      icon: "info",
     });
 
     if (!confirmed) return;
@@ -102,7 +105,7 @@ const SettingPage: React.FC = () => {
       confirmText: "Yes, change",
       cancelText: "Cancel",
       confirmColor: "#3b82f6",
-      icon: "question",
+      icon: "warning",
     });
 
     if (!confirmed) return;
@@ -130,21 +133,39 @@ const SettingPage: React.FC = () => {
       icon: "warning",
     });
 
-    if (confirmed) logout();
+    if (!confirmed) return;
+
+    logout();
+    navigate("/login", { replace: true });
   };
 
   return (
-    <div className="flex justify-center items-start min-h-screen p-6">
-      <div className="w-full max-w-md bg-secondary/95 backdrop-blur-md p-8 rounded-3xl shadow-xl transition-all duration-300 hover:shadow-2xl">
+    <div className="flex justify-center items-start min-h-[calc(100vh-6rem)] px-4 sm:px-6 py-6">
+      {/* Card */}
+      <div
+        className="
+          w-full max-w-md sm:max-w-lg 
+          bg-white/95 backdrop-blur-md 
+          p-6 sm:p-7 
+          rounded-2xl sm:rounded-3xl 
+          shadow-[0_18px_45px_rgba(15,23,42,0.08)]
+          border border-slate-100
+          transition-all duration-300 hover:shadow-[0_22px_55px_rgba(15,23,42,0.12)]
+        "
+      >
         {/* Header */}
-        <div className="flex flex-col items-center mb-6">
-          <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center mb-3 shadow-inner">
-            <CircleUser className="w-14 h-14 text-primary" />
+        <div className="flex flex-col items-center mb-6 sm:mb-7">
+          <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full bg-primary/20 flex items-center justify-center mb-3 shadow-inner border border-white/70">
+            <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-sm">
+              <span className="text-xl font-extrabold text-white">
+                {initial}
+              </span>
+            </div>
           </div>
-          <h1 className="text-xl font-poppins font-bold text-quanary">
+          <h1 className="text-lg sm:text-xl font-poppins font-bold text-quinary">
             Account Settings
           </h1>
-          <p className="text-sm font-inter text-quaternary">
+          <p className="text-xs sm:text-sm font-inter text-quaternary">
             Manage your profile and security
           </p>
         </div>
@@ -176,11 +197,12 @@ const SettingPage: React.FC = () => {
             {error && (
               <p className="text-red-500 text-sm font-medium mt-1">{error}</p>
             )}
-            <div className="mt-6 flex flex-col space-y-3">
+
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
               <Button
                 text="Save Password"
                 onClick={handlePasswordChange}
-                className="bg-[#4CAF50] hover:bg-[#229926] text-secondary font-semibold py-2 px-4 rounded-xl transition-all"
+                className="bg-[#4CAF50] hover:bg-[#229926] text-secondary font-semibold py-2 rounded-xl transition-all"
               />
               <Button
                 text="Cancel"
@@ -188,7 +210,7 @@ const SettingPage: React.FC = () => {
                   setIsChangingPassword(false);
                   setError("");
                 }}
-                className="bg-gray-300 hover:bg-gray-400 text-[#333] font-semibold py-2 px-4 rounded-xl transition-all"
+                className="bg-gray-300 hover:bg-gray-400 text-[#333] font-semibold border-0 py-2 rounded-xl transition-all"
               />
             </div>
           </div>
@@ -198,14 +220,18 @@ const SettingPage: React.FC = () => {
             {!isEditing ? (
               <div className="space-y-4 text-left">
                 <div>
-                  <p className="text-sm font-bold text-quanary">Name</p>
-                  <p className="text-quanary border-b border-gray-300 pb-1">
+                  <p className="text-xs sm:text-sm font-bold text-quinary">
+                    Name
+                  </p>
+                  <p className="text-quinary border-b border-gray-300 pb-1 text-sm">
                     {user.name}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-quanary">Email</p>
-                  <p className="text-quanary border-b border-gray-300 pb-1">
+                  <p className="text-xs sm:text-sm font-bold text-quinary">
+                    Email
+                  </p>
+                  <p className="text-quinary border-b border-gray-300 pb-1 text-sm">
                     {user.email}
                   </p>
                 </div>
@@ -235,18 +261,18 @@ const SettingPage: React.FC = () => {
             )}
 
             {/* Buttons */}
-            <div className="mt-8 flex flex-col space-y-3">
+            <div className="mt-7 flex flex-col sm:grid sm:grid-cols-2 sm:gap-3">
               {isEditing ? (
                 <>
                   {noChangeMessage && (
-                    <p className="text-yellow-600 text-sm font-medium mb-2">
+                    <p className="sm:col-span-2 text-yellow-600 text-xs sm:text-sm font-medium mb-1">
                       {noChangeMessage}
                     </p>
                   )}
                   <Button
                     text="Save"
                     onClick={handleSaveWithConfirm}
-                    className="bg-[#4CAF50] hover:bg-[#229926] text-white font-semibold py-2 px-4 rounded-xl transition-all"
+                    className="bg-[#4CAF50] hover:bg-[#229926] text-white font-semibold py-2 rounded-xl transition-all"
                   />
                   <Button
                     text="Cancel"
@@ -255,26 +281,30 @@ const SettingPage: React.FC = () => {
                       setError("");
                       setNoChangeMessage("");
                     }}
-                    className="bg-gray-300 hover:bg-gray-400 text-[#333] font-semibold py-2 px-4 rounded-xl transition-all"
+                    className="bg-gray-300 hover:bg-gray-400 text-[#333] font-semibold border-0 py-2 rounded-xl transition-all"
                   />
                 </>
               ) : (
                 <>
-                  <Button
-                    text="Edit Profile"
-                    onClick={() => setIsEditing(true)}
-                    className="bg-primary hover:bg-[#e6a100] text-white font-semibold py-2 px-4 rounded-xl transition-all"
-                  />
-                  <Button
-                    text="Change Password"
-                    onClick={() => setIsChangingPassword(true)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-xl transition-all"
-                  />
-                  <Button
-                    text="Logout"
-                    onClick={handleLogout}
-                    className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-xl transition-all"
-                  />
+                  <div className="flex flex-col sm:flex-row sm:col-span-2 sm:space-x-3 space-y-2 sm:space-y-0">
+                    <Button
+                      text="Edit Profile"
+                      onClick={() => setIsEditing(true)}
+                      className="flex-1 bg-primary hover:bg-[#e6a100] text-white font-semibold py-2 rounded-xl transition-all"
+                    />
+                    <Button
+                      text="Change Password"
+                      onClick={() => setIsChangingPassword(true)}
+                      className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-xl transition-all"
+                    />
+                  </div>
+                  <div className="mt-2 sm:mt-3 sm:col-span-2">
+                    <Button
+                      text="Logout"
+                      onClick={handleLogout}
+                      className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-xl transition-all"
+                    />
+                  </div>
                 </>
               )}
             </div>

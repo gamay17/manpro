@@ -10,8 +10,8 @@ export interface IRegisterResponse {
   id: string
   name: string
   email: string
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string
+  updatedAt: string
 }
 
 export interface ILoginPayload {

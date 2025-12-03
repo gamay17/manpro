@@ -1,23 +1,37 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AuthLayout from "../layout/AuthLayout";
 import UserLayout from "../layout/UserLayout";
+import ProjectLayout from "../layout/ProjectLayout"; // Layout untuk halaman proyek detail
+
 import LandingPage from "../pages/LandingPage";
-import RegisterPage from "../pages/RegisterPage";
-import HomePage from "../pages/HomePage";
-import ForgotPasswordPage from "../pages/ForgotPasswordPage";
-import LoginPage from "../pages/LoginPage";
-import ProjectPage from "../pages/ProjectPage";
-import SettingPage from "../pages/SettingPage";
-import ProtectedRoute from "../components/ProtectedRoute";
+import RegisterPage from "../pages/auth/RegisterPage";
+import HomePage from "../pages/users/HomePage";
+import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
+import LoginPage from "../pages/auth/LoginPage";
+import ProjectPage from "../pages/users/ProjectPage";
+import SettingPage from "../pages/users/SettingPage";
+import DashboardPage from "../pages/ProjectDetail/DashboardPage";
+import TaskPage from "../pages/ProjectDetail/TaskPage";
+import BoardPage from "../pages/ProjectDetail/BoardPage";
+
+import ProtectedRoute from "./ProtectedRoute";
+import PublicRoute from "./PublicRoute";
 
 const Router = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Landing Page tanpa layout */}
-        <Route path="/" element={<LandingPage />} />
+        {/* ===== Public Routes ===== */}
+        <Route element={<PublicRoute />}>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route element={<AuthLayout />}>
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgotPassword" element={<ForgotPasswordPage />} />
+          </Route>
+        </Route>
 
-        {/* Halaman dengan UserLayout (harus login) */}
+        {/* ===== Protected Routes (harus login) ===== */}
         <Route
           element={
             <ProtectedRoute>
@@ -30,13 +44,21 @@ const Router = () => {
           <Route path="/settings" element={<SettingPage />} />
         </Route>
 
-        {/* Login langsung */}
-        <Route path="/login" element={<LoginPage />} />
-
-        {/* Auth Layout untuk register & forgot password */}
-        <Route element={<AuthLayout />}>
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/forgotPassword" element={<ForgotPasswordPage />} />
+        {/* ===== Layout khusus proyek (ProjectLayout) ===== */}
+        <Route
+          path="/projects/:id"
+          element={
+            <ProtectedRoute>
+              <ProjectLayout />
+            </ProtectedRoute>
+          }
+        >
+          {/* Halaman utama proyek (overview) */}
+          <Route index element={<DashboardPage />} />
+          <Route path="tasks" element={<TaskPage />} />
+          <Route path="Board" element={<BoardPage/>}/>
+          {/* nanti bisa tambahkan sub-page lain, misalnya */}
+          {/* <Route path="members" element={<ProjectMembersPage />} /> */}
         </Route>
       </Routes>
     </BrowserRouter>

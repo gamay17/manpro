@@ -5,6 +5,7 @@ type ButtonProps = {
   text: string;
   onClick?: () => void;
   className?: string;
+  disabled?: boolean;
 };
 
 const Button: React.FC<ButtonProps> = ({
@@ -12,11 +13,13 @@ const Button: React.FC<ButtonProps> = ({
   text,
   onClick,
   className = "",
+  disabled = false,
 }) => {
   return (
     <button
       type={type}
       onClick={onClick}
+      disabled={disabled}
       className={`w-full p-2 border rounded font-semibold cursor-pointer font-poppins transition ${className}`}
     >
       {text}

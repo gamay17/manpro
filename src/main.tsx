@@ -5,7 +5,6 @@ import "./index.css";
 import { AuthProvider } from "./context/AuthProvider";
 import { Toaster } from "react-hot-toast";
 
-
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <AuthProvider>
