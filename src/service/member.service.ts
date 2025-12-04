@@ -9,7 +9,7 @@ export function createMemberService(
 ) {
   if (!projectId) throw new Error("projectId is required");
 
-  /** ---------- Helpers ---------- */
+  
   const readAll = (): Member[] => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -36,7 +36,7 @@ export function createMemberService(
     return role === "manager" || role === "owner";
   };
 
-  /** ---------- Service Object ---------- */
+  
 
   return {
     async getAll(): Promise<Member[]> {
@@ -99,7 +99,7 @@ export function createMemberService(
       writeAll(filtered);
     },
 
-    /** Ambil role user tertentu di project ini */
+    
     async getUserRole(userId: string): Promise<MemberRole | null> {
       const members = readProjectMembers();
       const found = members.find((m) => m.userId === userId);

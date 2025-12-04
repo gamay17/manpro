@@ -1,4 +1,4 @@
-// src/service/division.service.ts
+
 import type {
   Division,
   DivisionStatus,
@@ -6,11 +6,11 @@ import type {
 } from "../types/division";
 import { nowLocalDatetime, toDateOnly } from "../utils/datetime";
 
-/** ====== Konfigurasi Key ====== */
+
 const NS = "divisions";
 const keyForProject = (projectId: number) => `${NS}:${projectId}`;
 
-/** ====== Helpers ====== */
+
 type UnknownRecord = Record<string, unknown>;
 
 const isRecord = (v: unknown): v is UnknownRecord =>
@@ -37,7 +37,7 @@ function sleep(ms = 150) {
   return new Promise<void>((r) => setTimeout(r, ms));
 }
 
-/** ====== Normalizer ====== */
+
 function normalizeDivision(input: unknown, projectId: number): Division | null {
   if (!isRecord(input)) return null;
 
@@ -73,7 +73,7 @@ function normalizeDivision(input: unknown, projectId: number): Division | null {
   return d;
 }
 
-/** ====== Migrasi kecil (tanggal) ====== */
+
 function migrateDatesIfNeeded(
   list: Division[],
   writeFn: (next: Division[]) => void
@@ -92,12 +92,8 @@ function migrateDatesIfNeeded(
   return cleaned;
 }
 
-/** ====== Service per project ====== */
-/**
- * @param projectId id project
- * @param canManage fungsi yang mengembalikan true jika user adalah PM/Admin (bisa manage semua division)
- * @param getCurrentUserId fungsi opsional untuk mendapatkan userId yang sedang login (dipakai ketua divisi)
- */
+
+
 export function createDivisionService(
   projectId: number,
   canManage: () => boolean,
@@ -109,7 +105,7 @@ export function createDivisionService(
 
   const STORAGE_KEY = keyForProject(projectId);
 
-  /** helper cek permission full-manage (PM/Admin) */
+  
   function assertCanManage() {
     if (!canManage()) {
       throw new Error(
@@ -143,7 +139,7 @@ export function createDivisionService(
     return (list.reduce((max, d) => Math.max(max, d.id), 0) || 0) + 1;
   }
 
-  /** helper internal untuk apply patch ke division */
+  
   function applyPatch(
     list: Division[],
     idx: number,
@@ -176,7 +172,7 @@ export function createDivisionService(
   }
 
   return {
-    /** Ambil semua division untuk project ini */
+    
     async getAll(): Promise<Division[]> {
       await sleep(100);
       const list = read();
@@ -188,13 +184,13 @@ export function createDivisionService(
       });
     },
 
-    /** Ambil 1 division */
+    
     async getById(id: number): Promise<Division | undefined> {
       await sleep(60);
       return read().find((d) => d.id === id);
     },
 
-    /** Tambah division baru (hanya PM/Admin) */
+    
     async create(input: CreateDivisionInput): Promise<Division> {
       assertCanManage();
 
@@ -224,7 +220,7 @@ export function createDivisionService(
       return division;
     },
 
-    /** Update sebagian field division (hanya PM/Admin) */
+    
     async update(
       id: number,
       patch: Partial<Omit<Division, "id" | "projectId">>
@@ -239,11 +235,7 @@ export function createDivisionService(
       return applyPatch(list, idx, patch);
     },
 
-    /**
-     * Ubah status saja.
-     * - PM/Admin: bisa ubah status semua division
-     * - Ketua divisi: bisa ubah status division yang coordinatorId === userId
-     */
+   
     async setStatus(id: number, status: DivisionStatus): Promise<Division> {
       if (!asStatus(status)) {
         throw new Error("Invalid division status");
@@ -260,9 +252,9 @@ export function createDivisionService(
       const isCoordinator =
         currentUserId && division.coordinatorId === currentUserId;
 
-      // Izin:
-      // - boleh kalau PM/Admin (canManage() === true)
-      // - atau kalau dia koordinator division ini
+
+
+
       if (!isCoordinator && !canManage()) {
         throw new Error(
           "Anda tidak memiliki izin untuk mengubah status division ini"
@@ -272,7 +264,7 @@ export function createDivisionService(
       return applyPatch(list, idx, { status });
     },
 
-    /** Hapus division (hanya PM/Admin) */
+    
     async remove(id: number): Promise<void> {
       assertCanManage();
 
@@ -281,7 +273,7 @@ export function createDivisionService(
       write(list);
     },
 
-    /** Bersihkan semua division untuk project ini (hanya PM/Admin) */
+    
     async clearAll(): Promise<void> {
       assertCanManage();
 

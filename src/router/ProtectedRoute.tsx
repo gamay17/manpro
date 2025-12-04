@@ -9,7 +9,7 @@ export default function ProtectedRoute({
 }) {
   const { user, token, loading } = useAuth();
 
-  // Saat auth sedang dipulihkan -> tampilkan skeleton
+
   if (loading) {
     return (
       <div className="p-6">
@@ -19,12 +19,12 @@ export default function ProtectedRoute({
     );
   }
 
-  // Jika user belum ada -> redirect login
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  // Cek token (dan authService kalau ada)
+
   const isAuthed =
     !!token &&
     (typeof authService.isAuthenticated === "function"
@@ -35,6 +35,6 @@ export default function ProtectedRoute({
     return <Navigate to="/login" replace />;
   }
 
-  // Jika lolos semua -> render route
+
   return children ? <>{children}</> : <Outlet />;
 }

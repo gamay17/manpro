@@ -1,4 +1,4 @@
-// src/components/AddMemberModal.tsx
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, cubicBezier } from "framer-motion";
 import { UserPlus, ChevronDown } from "lucide-react";
@@ -45,7 +45,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
   const userRef = useRef<HTMLDivElement>(null);
   const divisionRef = useRef<HTMLDivElement>(null);
 
-  /** RESET modal saat dibuka */
+  
   useEffect(() => {
     if (open) {
       setForm({
@@ -60,7 +60,6 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
     }
   }, [open]);
 
-  /** Tutup dropdown user saat klik di luar */
   useEffect(() => {
     if (!dropdownOpen) return;
     const handler = (e: MouseEvent) => {
@@ -73,7 +72,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
     return () => document.removeEventListener("mousedown", handler, true);
   }, [dropdownOpen]);
 
-  /** Tutup dropdown division saat klik di luar */
+  
   useEffect(() => {
     if (!divisionOpen) return;
     const handler = (e: MouseEvent) => {
@@ -86,7 +85,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
     return () => document.removeEventListener("mousedown", handler, true);
   }, [divisionOpen]);
 
-  /** Filter user */
+ 
   const filteredUsers = useMemo(() => {
     const q = userInput.trim().toLowerCase();
 
@@ -99,7 +98,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
     });
   }, [users, userInput]);
 
-  /** Cek duplicate user */
+  
   const isDuplicate =
     !!form.userId &&
     existingMembers.some((m) => m.userId === form.userId);
@@ -109,7 +108,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
     form.divisionId > 0 &&
     !isDuplicate;
 
-  /** Pilih user */
+  
   const selectUser = (u: IRegisterResponse) => {
     setForm((prev) => ({ ...prev, userId: u.id }));
     setUserInput(`${u.name} (${u.email})`);
@@ -117,7 +116,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
     setError("");
   };
 
-  /** Submit form */
+  
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -150,7 +149,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-50">
-          {/* Backdrop */}
+          {}
           <motion.div
             className="absolute inset-0 bg-black/60 backdrop-blur-[1.5px]"
             initial={{ opacity: 0 }}
@@ -159,7 +158,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
             onClick={onClose}
           />
 
-          {/* Modal */}
+          {}
           <motion.div
             role="dialog"
             aria-modal="true"
@@ -178,7 +177,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
               transition: { duration: 0.25, ease: easeOutQuint },
             }}
           >
-            {/* Header */}
+            {}
             <div className="mb-4 flex items-center gap-3">
               <div className="grid h-9 w-9 place-items-center rounded-lg bg-amber-400 text-black">
                 <UserPlus size={18} />
@@ -194,9 +193,9 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
             </div>
             <div className="mb-3 h-0.5 w-full bg-gradient-to-r from-amber-400 to-amber-300 rounded" />
 
-            {/* Form */}
+            {}
             <form onSubmit={submit} className="space-y-3">
-              {/* User Input */}
+              {}
               <div ref={userRef} className="relative">
                 <label className="block text-sm font-semibold mb-1">
                   User <span className="text-rose-600">*</span>
@@ -254,7 +253,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
                 )}
               </div>
 
-              {/* Division — Custom Dropdown */}
+              {}
               <div ref={divisionRef} className="relative">
                 <label className="block text-sm font-semibold mb-1">
                   Division <span className="text-rose-600">*</span>
@@ -341,7 +340,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
                 </p>
               )}
 
-              {/* Buttons */}
+              {}
               <div className="mt-4 flex justify-end gap-2">
                 <button
                   type="button"

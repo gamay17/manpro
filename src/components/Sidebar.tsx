@@ -34,20 +34,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
           h-screen flex flex-col
           transition-all duration-500 ease-in-out
           ${isOpen ? "w-64" : "w-16"}
-          bg-gradient-to-b from-amber-400 via-amber-500 to-orange-500
+          bg-gradient-to-b from-amber-300 via-amber-400 to-orange-400
           backdrop-blur-[2px] bg-white/5
           border-r border-amber-300/60
           shadow-[0_18px_45px_rgba(15,23,42,0.25)]
           rounded-br-xl
         `}
       >
-        {/* Header user */}
+        
         <div
           onClick={() => setShowPopup(!showPopup)}
           className={`cursor-pointer ${isOpen ? "px-4 pt-4" : "px-2 pt-4"}`}
         >
           <div className="flex items-center gap-3">
-            {/* Avatar huruf modern */}
+            
             <div
               className="
                 h-11 w-11 rounded-full
@@ -80,7 +80,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
           />
         )}
 
-        {/* Menu utama */}
+        
         <div className="flex-grow flex flex-col gap-1 mt-4">
           {menus.map((menu) => {
             const Icon = menu.icon;
@@ -130,7 +130,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
           })}
         </div>
 
-        {/* Settings */}
+        
         <div className="border-t border-white/50 mt-2 pt-2">
           <NavLink
             to="/settings"

@@ -1,9 +1,10 @@
-// src/components/AddProjectModal.tsx
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, cubicBezier } from "framer-motion";
 import { FolderPlus } from "lucide-react";
 import type { CreateProjectInput } from "../types/project";
 import type { IRegisterResponse } from "../types/auth";
+import { isRangeValid } from "../utils/timerules"; // 
 
 interface AddProjectModalProps {
   open: boolean;
@@ -34,11 +35,10 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
   const nameRef = useRef<HTMLInputElement>(null);
   const pmRef = useRef<HTMLDivElement>(null);
 
-  // Ambil list user dari authService (mock: dari localStorage)
   useEffect(() => {
     if (!open) return;
     try {
-      // ambil dari localStorage
+
       const raw = localStorage.getItem("auth:users");
       if (!raw) {
         setUsers([]);
@@ -47,7 +47,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
       const parsed = JSON.parse(raw) as Array<
         IRegisterResponse & { password?: string }
       >;
-      // sanitize: hanya ambil id, name, email, createdAt, updatedAt
+
       const cleaned: IRegisterResponse[] = parsed.map((u) => ({
         id: u.id,
         name: u.name,
@@ -61,7 +61,6 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
     }
   }, [open]);
 
-  // Reset form saat modal dibuka
   useEffect(() => {
     if (open) {
       setForm({
@@ -77,7 +76,6 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
     }
   }, [open]);
 
-  // Tutup dropdown kalau klik di luar
   useEffect(() => {
     if (!pmOpen) return;
 
@@ -97,7 +95,6 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
       setForm((prev) => ({ ...prev, [key]: e.target.value }));
     };
 
-  // Filter user berdasarkan input
   const filteredUsers = useMemo(() => {
     const q = pmInput.trim().toLowerCase();
     if (!q) return users;
@@ -113,7 +110,6 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
     setPmOpen(false);
   };
 
-  // Semua field wajib diisi (termasuk managerId)
   const allFilled =
     (form.name?.trim() || "") &&
     (form.description?.trim() || "") &&
@@ -121,11 +117,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
     (form.endDate || "") &&
     (form.managerId || "");
 
-  // Pastikan endDate >= startDate
-  const validDateRange =
-    form.startDate &&
-    form.endDate &&
-    new Date(form.endDate).getTime() >= new Date(form.startDate).getTime();
+  const validDateRange = isRangeValid(form.startDate, form.endDate);
 
   const canSubmit = allFilled && validDateRange;
 
@@ -154,7 +146,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-50">
-          {/* Backdrop */}
+          {}
           <motion.div
             className="absolute inset-0 bg-black/60 backdrop-blur-[1.5px]"
             initial={{ opacity: 0 }}
@@ -163,7 +155,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
             onClick={onClose}
           />
 
-          {/* Modal */}
+          {}
           <motion.div
             role="dialog"
             aria-modal="true"
@@ -182,7 +174,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
               transition: { duration: 0.25, ease: easeOutQuint },
             }}
           >
-            {/* Header */}
+            {}
             <div className="mb-4 flex items-center gap-3">
               <div className="grid h-9 w-9 place-items-center rounded-lg bg-amber-400 text-black">
                 <FolderPlus size={18} />
@@ -193,9 +185,9 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
             </div>
             <div className="mb-5 h-0.5 w-full bg-gradient-to-r from-amber-400 to-amber-300 rounded" />
 
-            {/* Form */}
+            {}
             <form onSubmit={submit} className="space-y-3">
-              {/* Project Name */}
+              {}
               <div>
                 <label className="block text-sm font-semibold mb-1">
                   Project Name <span className="text-rose-600">*</span>
@@ -210,7 +202,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
                 />
               </div>
 
-              {/* Description */}
+              {}
               <div>
                 <label className="block text-sm font-semibold mb-1">
                   Description <span className="text-rose-600">*</span>
@@ -223,7 +215,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
                 />
               </div>
 
-              {/* Start & End Date */}
+              {}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-semibold mb-1">
@@ -244,12 +236,23 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
                     type="date"
                     value={form.endDate}
                     onChange={setField("endDate")}
+
+                    min={form.startDate || undefined}
                     className="w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
                   />
                 </div>
               </div>
 
-              {/* Project Manager - autocomplete */}
+              {}
+              {form.startDate &&
+                form.endDate &&
+                !validDateRange && (
+                  <p className="text-xs text-rose-600">
+                    End Date must be the same or after Start Date.
+                  </p>
+                )}
+
+              {}
               <div ref={pmRef} className="relative">
                 <label className="block text-sm font-semibold mb-1">
                   Project Manager <span className="text-rose-600">*</span>
@@ -260,7 +263,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
                   onChange={(e) => {
                     setPmInput(e.target.value);
                     setPmOpen(true);
-                    // reset managerId kalau user edit manual
+
                     setForm((prev) => ({ ...prev, managerId: "" }));
                   }}
                   onFocus={() => setPmOpen(true)}

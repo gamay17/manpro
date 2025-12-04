@@ -1,4 +1,4 @@
-// src/context/authprovider.tsx
+
 import React, {
   useEffect,
   useMemo,
@@ -17,7 +17,7 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const refreshTimer = useRef<number | null>(null);
 
-  // 1) Definisikan handleLogout dulu, karena dipakai di scheduleRefresh
+
   const handleLogout = useCallback(() => {
     authService.logout();
     setUser(null);
@@ -28,7 +28,7 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
     }
   }, []);
 
-  // 2) scheduleRefresh: gunakan tipe Tokens, tidak perlu any
+
   const scheduleRefresh = useCallback(() => {
     const tokens = authService.getTokens(); // Tokens | null
     if (!tokens) return;

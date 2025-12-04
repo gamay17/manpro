@@ -130,7 +130,7 @@ const RegisterPage: React.FC = () => {
         ${isFading ? "opacity-0" : "opacity-100"}
       `}
     >
-      {/* Header */}
+      
       <div className="mb-6 sm:mb-8 text-center sm:text-left">
         <h1 className="font-black text-3xl sm:text-4xl font-poppins text-primary mb-2">
           Create your account
@@ -141,7 +141,7 @@ const RegisterPage: React.FC = () => {
         </p>
       </div>
 
-      {/* Form (full width, card sudah dari AuthLayout) */}
+      
       <form onSubmit={handleSubmit} className="w-full space-y-3 sm:space-y-4">
         <div className="space-y-1">
           <InputField

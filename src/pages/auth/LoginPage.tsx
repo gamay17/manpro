@@ -1,4 +1,4 @@
-// src/pages/login.tsx
+
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Background from "../../assets/image/background.png";
 import InputField from "../../components/InputField";
@@ -66,8 +66,8 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-screen bg-secondary flex flex-col md:flex-row items-center justify-center px-4 md:px-10 lg:px-16 overflow-hidden">
-      {/* LEFT: form */}
+    <div className="min-h-screen w-screen bg-gradient-to-br from-[#F5F5F5] via-[#FFF7DA] to-[#EAEAEA] flex flex-col md:flex-row items-center justify-center px-4 md:px-10 lg:px-16 overflow-hidden">
+      
       <div className="w-full md:w-[40%] flex justify-center items-center mb-10 md:mb-0">
         <form
           onSubmit={handleSubmit}
@@ -148,7 +148,7 @@ const LoginPage: React.FC = () => {
         </form>
       </div>
 
-      {/* RIGHT: hero image */}
+      
       <div className="hidden md:flex w-[60%] justify-center items-center">
         <div className="relative w-full h-[86vh] max-h-[640px] rounded-3xl overflow-hidden shadow-[0_26px_80px_rgba(0,0,0,0.18)]">
           <img
@@ -157,7 +157,7 @@ const LoginPage: React.FC = () => {
             loading="lazy"
             className="w-full h-full object-cover"
           />
-          {/* overlay untuk kontras teks */}
+          
           <div className="absolute inset-0 bg-black/25" />
           <div className="absolute inset-0 flex flex-col justify-center px-12 lg:px-16 text-white">
             <h1 className="text-[34px] lg:text-[42px] font-bold font-poppins leading-snug drop-shadow-[0_6px_18px_rgba(0,0,0,0.45)]">

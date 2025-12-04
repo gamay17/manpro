@@ -2,12 +2,18 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, cubicBezier } from "framer-motion";
 import { FolderPen } from "lucide-react";
-import type { CreateProjectInput } from "../types/project";
+import type { CreateProjectInput, Project } from "../types/project";
 import type { IRegisterResponse } from "../types/auth";
+import type { Division } from "../types/division";
+import type { Task } from "../types/task";
+import { isRangeValid, validateProjectDateChange } from "../utils/timerules";
 
 interface EditProjectModalProps {
   open: boolean;
   initial: CreateProjectInput;
+  projectId: number;
+  divisions: Division[];
+  tasks: Task[];
   onClose: () => void;
   onSubmit: (data: CreateProjectInput) => void;
 }
@@ -17,6 +23,9 @@ const easeOutQuint = cubicBezier(0.22, 1, 0.36, 1);
 const EditProjectModal: React.FC<EditProjectModalProps> = ({
   open,
   initial,
+  projectId,
+  divisions,
+  tasks,
   onClose,
   onSubmit,
 }) => {
@@ -34,6 +43,8 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
   const [pmOpen, setPmOpen] = useState(false);
   const pmRef = useRef<HTMLDivElement>(null);
 
+  const [errors, setErrors] = useState<string[]>([]);
+
   // Prefill saat modal dibuka
   useEffect(() => {
     if (!open) return;
@@ -45,6 +56,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
       endDate: initial.endDate ?? "",
       managerId: initial.managerId ?? "",
     });
+    setErrors([]);
   }, [open, initial]);
 
   // Ambil list user dari localStorage (mock auth:users)
@@ -113,6 +125,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
     (key: keyof CreateProjectInput) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setForm((prev) => ({ ...prev, [key]: e.target.value }));
+      setErrors([]);
     };
 
   // Filter user berdasarkan teks input
@@ -130,19 +143,52 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
     setForm((prev) => ({ ...prev, managerId: u.id }));
     setPmInput(`${u.name} (${u.email})`);
     setPmOpen(false);
+    setErrors([]);
   };
 
-  // Validasi rentang tanggal (date-only)
-  const validDateRange =
-    !form.startDate ||
-    !form.endDate ||
-    new Date(form.endDate).getTime() >= new Date(form.startDate).getTime();
+  // Semua field wajib diisi (sama seperti AddProject)
+  const allFilled =
+    (form.name?.trim() || "") &&
+    (form.description?.trim() || "") &&
+    (form.startDate || "") &&
+    (form.endDate || "") &&
+    (form.managerId || "");
 
-  const canSubmit = validDateRange;
+  // Validasi rentang tanggal pakai helper
+  const validDateRange = isRangeValid(form.startDate, form.endDate);
+
+  const canSubmit = !!allFilled && validDateRange;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
+
+    // Draft project untuk validasi konflik tanggal dengan division/task
+    const projectDraft: Project = {
+      id: projectId,
+      name: form.name,
+      description: form.description,
+      startDate: form.startDate,
+      endDate: form.endDate,
+      managerId: form.managerId,
+      // field lain yang tidak dipakai di timeRules, isi dummy saja
+      ownerId: "",
+      status: "in-progress",
+      createdAt: undefined,
+      updatedAt: undefined,
+    };
+
+    const conflictErrors = validateProjectDateChange(
+      projectDraft,
+      divisions,
+      tasks
+    );
+
+    if (conflictErrors.length > 0) {
+      setErrors(conflictErrors);
+      return;
+    }
+
     try {
       setSubmitting(true);
       await new Promise((r) => setTimeout(r, 150));
@@ -163,7 +209,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-50">
-          {/* Backdrop */}
+          {}
           <motion.div
             className="absolute inset-0 bg-black/60 backdrop-blur-[1.5px]"
             initial={{ opacity: 0 }}
@@ -172,7 +218,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
             onClick={onClose}
           />
 
-          {/* Modal */}
+          {}
           <motion.div
             role="dialog"
             aria-modal="true"
@@ -191,7 +237,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
               transition: { duration: 0.25, ease: easeOutQuint },
             }}
           >
-            {/* Header */}
+            {}
             <div className="mb-4 flex items-center gap-3">
               <div className="grid h-9 w-9 place-items-center rounded-lg bg-amber-400 text-black">
                 <FolderPen size={20} />
@@ -202,11 +248,11 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
             </div>
             <div className="mb-5 h-0.5 w-full bg-gradient-to-r from-amber-400 to-amber-300 rounded" />
 
-            {/* Form */}
+            {}
             <form onSubmit={submit} className="space-y-3">
               <div>
                 <label className="block text-sm font-semibold mb-1">
-                  Project Name
+                  Project Name <span className="text-rose-600">*</span>
                 </label>
                 <input
                   type="text"
@@ -219,7 +265,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
               <div>
                 <label className="block text-sm font-semibold mb-1">
-                  Description
+                  Description <span className="text-rose-600">*</span>
                 </label>
                 <textarea
                   value={form.description}
@@ -229,11 +275,11 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 />
               </div>
 
-              {/* Start & End Date */}
+              {}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-semibold mb-1">
-                    Start Date
+                    Start Date <span className="text-rose-600">*</span>
                   </label>
                   <input
                     type="date"
@@ -244,21 +290,38 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1">
-                    End Date
+                    End Date <span className="text-rose-600">*</span>
                   </label>
                   <input
                     type="date"
                     value={form.endDate}
                     onChange={setField("endDate")}
+                    min={form.startDate || undefined}
                     className="w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
                   />
                 </div>
               </div>
 
-              {/* Project Manager - autocomplete */}
+              {}
+              {(!validDateRange || errors.length > 0) && (
+                <div className="text-xs text-rose-600 space-y-1">
+                  {!validDateRange && (
+                    <p>End Date must be the same or after Start Date.</p>
+                  )}
+                  {errors.length > 0 && (
+                    <ul className="list-disc pl-4">
+                      {errors.map((err) => (
+                        <li key={err}>{err}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
+              {}
               <div ref={pmRef} className="relative">
                 <label className="block text-sm font-semibold mb-1">
-                  Project Manager
+                  Project Manager <span className="text-rose-600">*</span>
                 </label>
                 <input
                   type="text"
@@ -266,8 +329,8 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                   onChange={(e) => {
                     setPmInput(e.target.value);
                     setPmOpen(true);
-                    // kalau user lagi ngedit manual, kosongin managerId dulu
                     setForm((prev) => ({ ...prev, managerId: "" }));
+                    setErrors([]);
                   }}
                   onFocus={() => setPmOpen(true)}
                   placeholder="Search user by name or email"

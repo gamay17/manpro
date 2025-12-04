@@ -1,4 +1,4 @@
-// src/service/project.service.ts
+
 import type {
   Project,
   ProjectStatus,
@@ -9,13 +9,13 @@ import type { Member } from "../types/member";
 import type { Task } from "../types/task";
 import { nowLocalDatetime, toDateOnly } from "../utils/datetime";
 
-/** ====== Key global di localStorage ====== */
+
 const STORAGE_KEY = "projects";
 const MEMBER_STORAGE_KEY = "members";
 const DIVISION_STORAGE_KEY = "divisions";
 const TASK_STORAGE_KEY = "tasks";
 
-/** ====== Helpers ====== */
+
 type UnknownRecord = Record<string, unknown>;
 
 const isRecord = (v: unknown): v is UnknownRecord =>
@@ -40,7 +40,7 @@ function sleep(ms = 150) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
-/** ====== Normalizer ====== */
+
 function normalizeProject(input: unknown): Project | null {
   if (!isRecord(input)) return null;
 
@@ -77,7 +77,7 @@ function normalizeProject(input: unknown): Project | null {
   };
 }
 
-/** ====== I/O Global ====== */
+
 function readAll(): Project[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -104,7 +104,7 @@ function nextId(list: Project[]): number {
   return (list.reduce((max, p) => Math.max(max, p.id), 0) || 0) + 1;
 }
 
-/** ====== Service ====== */
+
 export function createProjectService(currentUserId: string) {
   if (!currentUserId) {
     throw new Error("createProjectService requires currentUserId");
@@ -143,7 +143,7 @@ export function createProjectService(currentUserId: string) {
   }
 
   return {
-    /** Ambil semua project yang user bisa lihat */
+    
     async getAll(): Promise<Project[]> {
       await sleep(120);
       const all = readAll();
@@ -185,7 +185,7 @@ export function createProjectService(currentUserId: string) {
       return undefined;
     },
 
-    /** Tambah project */
+    
     async create(input: CreateProjectInput): Promise<Project> {
       await sleep(120);
       const all = readAll();
@@ -210,7 +210,7 @@ export function createProjectService(currentUserId: string) {
       return project;
     },
 
-    /** Update project */
+    
     async update(
       id: number,
       patch: Partial<Omit<Project, "id" | "ownerId">>
@@ -247,7 +247,7 @@ export function createProjectService(currentUserId: string) {
       return this.update(id, { status });
     },
 
-    /** Hapus project + semua division, member, task terkait */
+    
     async remove(id: number): Promise<void> {
       await sleep(100);
       const all = readAll();
@@ -258,11 +258,11 @@ export function createProjectService(currentUserId: string) {
         throw new Error("Only owner can delete this project");
       }
 
-      // === 1. Hapus project ===
+
       const nextProjects = all.filter((p) => p.id !== id);
       writeAll(nextProjects);
 
-      // === 2. Ambil divisions / members / tasks ===
+
       const divisions: Division[] = JSON.parse(
         localStorage.getItem(DIVISION_STORAGE_KEY) || "[]"
       );
@@ -273,17 +273,17 @@ export function createProjectService(currentUserId: string) {
         localStorage.getItem(TASK_STORAGE_KEY) || "[]"
       );
 
-      // === 3. Hapus divisions milik project ===
+
       const nextDivisions = divisions.filter((d) => d.projectId !== id);
 
-      // === 4. Hapus members milik project ===
+
       const removedMemberIds = members
         .filter((m) => m.projectId === id)
         .map((m) => m.id);
 
       const nextMembers = members.filter((m) => m.projectId !== id);
 
-      // === 5. Hapus tasks milik project & tasks assigned ke member yang dihapus ===
+
       const nextTasks = tasks.filter((t) => {
         if (t.projectId === id) return false;
         if (t.assigneeId && removedMemberIds.includes(t.assigneeId))
@@ -291,7 +291,7 @@ export function createProjectService(currentUserId: string) {
         return true;
       });
 
-      // === 6. Save ===
+
       localStorage.setItem(DIVISION_STORAGE_KEY, JSON.stringify(nextDivisions));
       localStorage.setItem(MEMBER_STORAGE_KEY, JSON.stringify(nextMembers));
       localStorage.setItem(TASK_STORAGE_KEY, JSON.stringify(nextTasks));

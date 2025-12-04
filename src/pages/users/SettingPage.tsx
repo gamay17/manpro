@@ -1,4 +1,4 @@
-// src/pages/settings/SettingPage.tsx
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
@@ -141,7 +141,7 @@ const SettingPage: React.FC = () => {
 
   return (
     <div className="flex justify-center items-start min-h-[calc(100vh-6rem)] px-4 sm:px-6 py-6">
-      {/* Card */}
+      
       <div
         className="
           w-full max-w-md sm:max-w-lg 
@@ -153,7 +153,7 @@ const SettingPage: React.FC = () => {
           transition-all duration-300 hover:shadow-[0_22px_55px_rgba(15,23,42,0.12)]
         "
       >
-        {/* Header */}
+        
         <div className="flex flex-col items-center mb-6 sm:mb-7">
           <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full bg-primary/20 flex items-center justify-center mb-3 shadow-inner border border-white/70">
             <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-sm">
@@ -170,7 +170,7 @@ const SettingPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Password Form */}
+        
         {isChangingPassword ? (
           <div className="space-y-4 text-left">
             <InputField
@@ -216,7 +216,7 @@ const SettingPage: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* Profile Form */}
+            
             {!isEditing ? (
               <div className="space-y-4 text-left">
                 <div>
@@ -260,7 +260,7 @@ const SettingPage: React.FC = () => {
               </div>
             )}
 
-            {/* Buttons */}
+            
             <div className="mt-7 flex flex-col sm:grid sm:grid-cols-2 sm:gap-3">
               {isEditing ? (
                 <>

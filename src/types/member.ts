@@ -3,8 +3,8 @@ export type MemberRole = "owner" | "manager" | "leader" | "member";
 export interface Member {
   id: number;
   projectId: number;
-  userId: string;      // referensi ke auth:users
-  divisionId: number;  // referensi ke divisions
+  userId: string;
+  divisionId: number;
   role: MemberRole;
   createdAt: string;
   updatedAt: string;

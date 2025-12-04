@@ -1,4 +1,4 @@
-// src/service/task.service.ts
+
 
 import type {
   Task,
@@ -16,7 +16,7 @@ import { nowLocalDatetime, toDateOnly } from "../utils/datetime";
  ============================== */
 const TASK_STORAGE_KEY = "tasks";
 
-/** Helpers */
+
 type UnknownRecord = Record<string, unknown>;
 
 const isRecord = (v: unknown): v is UnknownRecord =>
@@ -39,7 +39,7 @@ const asStatus = (v: unknown): TaskStatus | undefined =>
     ? v
     : undefined;
 
-/** Normalizer */
+
 function normalizeTask(input: unknown): Task | null {
   if (!isRecord(input)) return null;
 
@@ -76,7 +76,7 @@ function normalizeTask(input: unknown): Task | null {
   };
 }
 
-/** Migrasi format tanggal */
+
 function migrateDatesIfNeeded(
   list: Task[],
   writeFn: (next: Task[]) => void
@@ -99,7 +99,7 @@ function migrateDatesIfNeeded(
   return cleaned;
 }
 
-/** Load / Save GLOBAL */
+
 function readAll(): Task[] {
   try {
     const raw = localStorage.getItem(TASK_STORAGE_KEY);
@@ -138,7 +138,7 @@ export function createTaskService(
 ) {
   if (!projectId) throw new Error("createTaskService requires projectId");
 
-  /** PERMISSIONS */
+  
   function currentMember(): Member | undefined {
     const uid = getCurrentUserId();
     if (!uid) return undefined;
@@ -179,9 +179,9 @@ export function createTaskService(
     return m?.id === task.assigneeId;
   }
 
-  /** PUBLIC API */
+  
   return {
-    /** Ambil task hanya untuk project ini */
+    
     async getAll(): Promise<Task[]> {
       await new Promise((r) => setTimeout(r, 60));
       const all = readAll();

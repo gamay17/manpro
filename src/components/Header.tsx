@@ -28,7 +28,7 @@ const Header: React.FC<HeaderProps> = ({ isOpen, setIsOpen }) => {
       "
     >
       <div className="flex items-center gap-4">
-        {/* Toggle Button */}
+        {}
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="
@@ -40,7 +40,7 @@ const Header: React.FC<HeaderProps> = ({ isOpen, setIsOpen }) => {
           {isOpen ? <PanelLeftClose size={22} /> : <PanelLeftOpen size={22} />}
         </button>
 
-        {/* App + Page Title */}
+        {}
         <div className="flex flex-col">
           <span className="text-sm md:text-base font-semibold text-slate-600">
             ManPro

@@ -162,13 +162,13 @@ const DivisionTable: React.FC<DivisionTableProps> = ({
 
   return (
     <div className="mt-6 bg-white/95 rounded-3xl shadow-[0_18px_45px_rgba(15,23,42,0.08)] border border-gray-100/80">
-      {/* Header card di atas tabel */}
+      {}
       <div className="flex items-center justify-between px-4 sm:px-5 pt-4 pb-3 border-b border-slate-100/80">
         <h3 className="text-base sm:text-lg font-semibold text-slate-900">
           Divisions
         </h3>
 
-        {/* Tombol Tambah Divisi di header kanan */}
+        {}
         {canEdit && onAddDivision && (
           <button
             onClick={onAddDivision}
@@ -256,12 +256,12 @@ const DivisionTable: React.FC<DivisionTableProps> = ({
                         transition-colors duration-150
                       `}
                     >
-                      {/* No */}
+                      {}
                       <td className="py-3 px-3 align-top text-slate-400 text-[11px] sm:text-xs text-center">
                         {idx + 1}
                       </td>
 
-                      {/* Division name */}
+                      {}
                       <td className="py-3 px-3 align-top">
                         <div className="flex flex-col gap-0.5">
                           <span className="font-semibold text-slate-900 text-[13px] truncate">
@@ -275,7 +275,7 @@ const DivisionTable: React.FC<DivisionTableProps> = ({
                         </div>
                       </td>
 
-                      {/* Main Task */}
+                      {}
                       <td className="py-3 px-3 align-top">
                         <p
                           className="text-slate-700 max-w-[260px] text-[11px] sm:text-[12px] leading-snug line-clamp-2"
@@ -287,7 +287,7 @@ const DivisionTable: React.FC<DivisionTableProps> = ({
                         </p>
                       </td>
 
-                      {/* Coordinator */}
+                      {}
                       <td className="py-3 px-3 align-top">
                         {coordinator ? (
                           <div className="flex items-center gap-3 min-w-0">
@@ -310,7 +310,7 @@ const DivisionTable: React.FC<DivisionTableProps> = ({
                         )}
                       </td>
 
-                      {/* Status – pakai dropdown custom */}
+                      {}
                       <td className="py-3 px-3 align-top">
                         <div className="inline-flex min-w-[140px] justify-center">
                           <StatusDropdown
@@ -323,7 +323,7 @@ const DivisionTable: React.FC<DivisionTableProps> = ({
                         </div>
                       </td>
 
-                      {/* Dates */}
+                      {}
                       <td className="py-3 px-3 align-top text-slate-700 text-[11px] sm:text-[12px] text-center whitespace-nowrap">
                         {d.startDate || (
                           <span className="text-slate-400">-</span>

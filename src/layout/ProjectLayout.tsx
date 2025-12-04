@@ -21,7 +21,7 @@ import { createProjectService } from "../service/project.service";
 import type { Project } from "../types/project";
 import LogoutPopup from "../components/Popup";
 
-/* ================= MAIN LAYOUT ================= */
+
 
 const ProjectLayout: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -57,7 +57,7 @@ const ProjectLayout: React.FC = () => {
 
         setProjectName(data.name ?? "Project Name");
 
-        // type-safe check status/completed
+
         type ExtendedProject = Project & {
           status?: string;
           completed?: boolean;
@@ -117,7 +117,7 @@ const ProjectLayout: React.FC = () => {
 
 export default ProjectLayout;
 
-/* ================= SIDEBAR ================= */
+
 
 interface SidebarProps {
   isOpen: boolean;
@@ -142,7 +142,11 @@ const ProjectSidebar: React.FC<SidebarProps> = ({ isOpen, projectId }) => {
       path: `/projects/${projectId}/board`,
       icon: KanbanSquare,
     },
-    { name: "My Task", path: `/projects/${projectId}/mytask`, icon: CheckSquare },
+    {
+      name: "My Task",
+      path: `/projects/${projectId}/mytask`,
+      icon: CheckSquare,
+    },
   ];
 
   const logoutNow = () => {
@@ -159,20 +163,23 @@ const ProjectSidebar: React.FC<SidebarProps> = ({ isOpen, projectId }) => {
         h-screen flex flex-col
         transition-all duration-500
         ${isOpen ? "w-64" : "w-16"}
-        bg-gradient-to-b from-amber-400 via-amber-500 to-orange-500
+        bg-gradient-to-b
+from-amber-300
+via-amber-400
+to-orange-400
         backdrop-blur-[2px] bg-white/5
         border-r border-amber-300/60
         shadow-[0_18px_45px_rgba(15,23,42,0.25)]
         rounded-br-xl
       `}
     >
-      {/* USER */}
+      
       <div
         onClick={() => setShowPopup(!showPopup)}
         className={`cursor-pointer ${isOpen ? "px-4 pt-4" : "px-2 pt-4"}`}
       >
         <div className="flex items-center gap-3">
-          {/* Avatar huruf – modern gradient */}
+          
           <div
             className="
               h-11 w-11 rounded-full
@@ -200,7 +207,7 @@ const ProjectSidebar: React.FC<SidebarProps> = ({ isOpen, projectId }) => {
         <LogoutPopup onLogout={logoutNow} onClose={() => setShowPopup(false)} />
       )}
 
-      {/* MENU */}
+      
       <div className="flex-grow flex flex-col gap-1 mt-4">
         {menus.map((m) => {
           const Icon = m.icon;
@@ -258,7 +265,7 @@ const ProjectSidebar: React.FC<SidebarProps> = ({ isOpen, projectId }) => {
   );
 };
 
-/* ================= HEADER ================= */
+
 
 interface HeaderProps {
   isOpen: boolean;
@@ -284,7 +291,7 @@ const ProjectHeader: React.FC<HeaderProps> = ({
       "
     >
       <div className="flex items-center gap-4">
-        {/* Sidebar Toggle */}
+        
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="
@@ -297,7 +304,7 @@ const ProjectHeader: React.FC<HeaderProps> = ({
         </button>
 
         <div className="flex flex-col">
-          {/* Projects label */}
+          
           <Link
             to="/projects"
             className="
@@ -309,7 +316,7 @@ const ProjectHeader: React.FC<HeaderProps> = ({
           </Link>
 
           <div className="flex items-center gap-3 mt-0.5">
-            {/* Nama project – sedikit lebih kecil */}
+            
             <h1 className="text-base md:text-lg font-bold text-slate-900">
               {projectName}
             </h1>

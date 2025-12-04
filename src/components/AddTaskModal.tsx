@@ -7,17 +7,18 @@ import type { CreateTaskInput, TaskStatus } from "../types/task";
 import type { Member } from "../types/member";
 import type { Division } from "../types/division";
 import type { IRegisterResponse } from "../types/auth";
+import { isRangeValid, isChildWithinParent } from "../utils/timerules";
 
 interface AddTaskModalProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (data: CreateTaskInput) => void;
 
-  /** Members di project ini (SUDAH DIFILTER di parent kalau leader) */
+  
   members: Member[];
-  /** Divisions di project ini */
+  
   divisions: Division[];
-  /** Users dari auth (untuk info nama/email assignee) */
+  
   users: IRegisterResponse[];
 }
 
@@ -123,7 +124,25 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
   }, [members, userMap, divisionMap, assigneeInput]);
 
   const selectAssignee = (member: Member, label: string) => {
-    setForm((prev) => ({ ...prev, assigneeId: member.id }));
+    const div = divisionMap.get(member.divisionId);
+
+    setForm((prev) => {
+      let next = { ...prev, assigneeId: member.id };
+
+      // kalau task punya tanggal yang di luar division baru, reset tanggal
+      if (
+        div &&
+        !isChildWithinParent(
+          { startDate: div.startDate, endDate: div.dueDate },
+          { startDate: next.startDate, dueDate: next.dueDate }
+        )
+      ) {
+        next = { ...next, startDate: "", dueDate: "" };
+      }
+
+      return next;
+    });
+
     setAssigneeInput(label);
     setAssigneeOpen(false);
     setError("");
@@ -138,12 +157,50 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
     (form.dueDate || "") &&
     form.assigneeId;
 
-  const validDateRange =
-    form.startDate &&
-    form.dueDate &&
-    new Date(form.dueDate).getTime() >= new Date(form.startDate).getTime();
+  // 🔎 cari division dari assignee (kalau ada)
+  const assigneeMember = form.assigneeId
+    ? members.find((m) => m.id === form.assigneeId)
+    : undefined;
+  const assigneeDivision = assigneeMember
+    ? divisionMap.get(assigneeMember.divisionId)
+    : undefined;
 
-  const canSubmit = !!allFilled && validDateRange;
+  // ✅ 1) cek range task sendiri: start <= due
+  const validOwnRange = isRangeValid(form.startDate, form.dueDate);
+
+  // ✅ 2) cek task di dalam range division assignee
+  const withinDivision = assigneeDivision
+    ? isChildWithinParent(
+        { startDate: assigneeDivision.startDate, endDate: assigneeDivision.dueDate },
+        { startDate: form.startDate, dueDate: form.dueDate }
+      )
+    : true;
+
+  // gabungkan error tanggal
+  let dateErrorMsg = "";
+  if (form.startDate && form.dueDate) {
+    if (!validOwnRange) {
+      dateErrorMsg = "Due date must be greater than or equal to start date.";
+    } else if (!withinDivision) {
+      dateErrorMsg =
+        "Task dates must be within the date range of the assignee's division.";
+    }
+  }
+  const hasDateError = !!dateErrorMsg;
+
+  const canSubmit = !!allFilled && !hasDateError;
+
+  // 🎯 Batas tanggal untuk input, supaya "tidak bisa pilih di luar range"
+  const divisionStart = assigneeDivision?.startDate || "";
+  const divisionEnd = assigneeDivision?.dueDate || "";
+
+  const startMin = divisionStart || undefined;
+  const startMax =
+    (form.dueDate || divisionEnd || "") || undefined;
+
+  const dueMin =
+    (form.startDate || divisionStart || "") || undefined;
+  const dueMax = divisionEnd || undefined;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,8 +209,8 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
         setError("Task title is required.");
       } else if (!form.assigneeId) {
         setError("Assignee is required.");
-      } else if (!validDateRange) {
-        setError("Due date must be greater than or equal to start date.");
+      } else if (hasDateError) {
+        setError(dateErrorMsg);
       } else {
         setError("All required fields must be filled.");
       }
@@ -195,7 +252,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-50">
-          {/* Backdrop */}
+          {}
           <motion.div
             className="absolute inset-0 bg-black/60 backdrop-blur-[1.5px]"
             initial={{ opacity: 0 }}
@@ -204,7 +261,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
             onClick={onClose}
           />
 
-          {/* Modal */}
+          {}
           <motion.div
             role="dialog"
             aria-modal="true"
@@ -223,7 +280,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
               transition: { duration: 0.25, ease: easeOutQuint },
             }}
           >
-            {/* Header */}
+            {}
             <div className="mb-4 flex items-center gap-3">
               <div className="grid h-9 w-9 place-items-center rounded-lg bg-amber-400 text-black">
                 <ListTodo size={18} />
@@ -239,9 +296,9 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
             </div>
             <div className="mb-3 h-0.5 w-full bg-gradient-to-r from-amber-400 to-amber-300 rounded" />
 
-            {/* Form */}
+            {}
             <form onSubmit={submit} className="space-y-3">
-              {/* Task Title */}
+              {}
               <div>
                 <label className="block text-sm font-semibold mb-1">
                   Task Title <span className="text-rose-600">*</span>
@@ -261,7 +318,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                 />
               </div>
 
-              {/* Description */}
+              {}
               <div>
                 <label className="block text-sm font-semibold mb-1">
                   Description
@@ -275,9 +332,9 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                 />
               </div>
 
-              {/* Dates */}
+              {}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {/* Start Date */}
+                {}
                 <div>
                   <label className="block text-sm font-semibold mb-1">
                     Start Date <span className="text-rose-600">*</span>
@@ -286,11 +343,13 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                     type="date"
                     value={form.startDate || ""}
                     onChange={setField("startDate")}
+                    min={startMin}
+                    max={startMax}
                     className="w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
                   />
                 </div>
 
-                {/* Due Date */}
+                {}
                 <div>
                   <label className="block text-sm font-semibold mb-1">
                     Due Date <span className="text-rose-600">*</span>
@@ -299,22 +358,24 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                     type="date"
                     value={form.dueDate || ""}
                     onChange={setField("dueDate")}
+                    min={dueMin}
+                    max={dueMax}
                     className={`w-full rounded-md border px-3 py-2 text-sm outline-none bg-gray-100 transition
                       ${
-                        validDateRange || !form.startDate || !form.dueDate
-                          ? "border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
-                          : "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
+                        hasDateError
+                          ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
+                          : "border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
                       }`}
                   />
-                  {!validDateRange && form.startDate && form.dueDate && (
+                  {hasDateError && (
                     <p className="mt-1 text-[11px] text-rose-600">
-                      Due date must be greater than or equal to start date.
+                      {dateErrorMsg}
                     </p>
                   )}
                 </div>
               </div>
 
-              {/* Assignee autocomplete */}
+              {}
               <div ref={assigneeRef} className="relative">
                 <label className="block text-sm font-semibold mb-1">
                   Assignee <span className="text-rose-600">*</span>
@@ -388,7 +449,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                 </p>
               )}
 
-              {/* Footer buttons */}
+              {}
               <div className="mt-4 flex justify-end gap-2">
                 <button
                   type="button"

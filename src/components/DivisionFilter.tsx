@@ -34,7 +34,7 @@ const DivisionFilter: React.FC<DivisionFilterProps> = ({
 
   return (
     <div className={`relative ${className}`}>
-      {/* BUTTON */}
+      {}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -56,7 +56,7 @@ const DivisionFilter: React.FC<DivisionFilterProps> = ({
         />
       </button>
 
-      {/* DROPDOWN */}
+      {}
       {open && (
         <div
           className="

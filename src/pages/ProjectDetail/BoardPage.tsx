@@ -1,4 +1,4 @@
-// src/pages/ProjectDetail/BoardPage.tsx
+
 import React from "react";
 import { useParams } from "react-router-dom";
 import { Plus, MoreHorizontal } from "lucide-react";
@@ -26,7 +26,7 @@ const statusLabel: Record<TaskStatus, string> = {
   done: "Done",
 };
 
-// Warna header kolom
+
 const columnHeaderClass: Record<TaskStatus, string> = {
   todo: "bg-amber-200 text-amber-800 border-amber-200",
   "in-progress": "bg-blue-200 text-blue-800 border-blue-200",
@@ -70,7 +70,7 @@ const BoardPage: React.FC = () => {
   const [divisionFilter, setDivisionFilter] =
     React.useState<DivisionFilterValue>("all");
 
-  // drag & drop state
+
   const [draggedTaskId, setDraggedTaskId] = React.useState<number | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [dragOverStatus, setDragOverStatus] = React.useState<TaskStatus | null>(
@@ -80,7 +80,7 @@ const BoardPage: React.FC = () => {
     number | null
   >(null);
 
-  // refs untuk service
+
   const membersRef = React.useRef<Member[]>([]);
   const divisionsRef = React.useRef<Division[]>([]);
 
@@ -92,7 +92,7 @@ const BoardPage: React.FC = () => {
     divisionsRef.current = divisions;
   }, [divisions]);
 
-  // ======= SERVICES ======= //
+
   const projectSvc = React.useMemo(
     () => (currentUserId ? createProjectService(currentUserId) : null),
     [currentUserId]
@@ -111,7 +111,7 @@ const BoardPage: React.FC = () => {
     [projectId, currentUserId]
   );
 
-  // ======= MAP DATA ======= //
+
   const userMap = React.useMemo(() => {
     const map = new Map<string, IRegisterResponse>();
     users.forEach((u) => map.set(u.id, u));
@@ -130,7 +130,7 @@ const BoardPage: React.FC = () => {
     return map;
   }, [divisions]);
 
-  // ======= PERMISSION HELPER (sama kayak TaskPage) ======= //
+
   const getTaskPermission = React.useCallback(
     (task: Task) => {
       const assignee = task.assigneeId
@@ -171,7 +171,7 @@ const BoardPage: React.FC = () => {
 
   const canCreateTask = canManageAll || isLeaderGlobal;
 
-  // ======= LOAD DATA ======= //
+
   React.useEffect(() => {
     let cancelled = false;
 
@@ -190,7 +190,7 @@ const BoardPage: React.FC = () => {
           throw new Error("Project service tidak tersedia.");
         }
 
-        // 1) project
+
         const project: Project | undefined = await projectSvc.getById(
           projectId
         );
@@ -202,7 +202,7 @@ const BoardPage: React.FC = () => {
           project.managerId === currentUserId;
         setCanManageAll(isOwnerOrManager);
 
-        // 2) members
+
         let allMembers: Member[] = [];
         try {
           const raw = localStorage.getItem("members");
@@ -227,7 +227,7 @@ const BoardPage: React.FC = () => {
           setCurrentMemberId(meMember?.id ?? null);
         }
 
-        // 3) divisions
+
         let divs: Division[] = [];
 
         try {
@@ -266,13 +266,13 @@ const BoardPage: React.FC = () => {
 
         if (!cancelled) setDivisions(divs);
 
-        // 4) tasks
+
         if (taskSvc) {
           const ts = await taskSvc.getAll();
           if (!cancelled) setTasks(ts);
         }
 
-        // 5) users
+
         try {
           const raw = localStorage.getItem("auth:users");
           if (raw) {
@@ -315,7 +315,7 @@ const BoardPage: React.FC = () => {
     };
   }, [projectId, currentUserId, projectSvc, taskSvc]);
 
-  // ======= FILTERED TASKS (BY DIVISION) ======= //
+
   const filteredTasks = React.useMemo(() => {
     if (divisionFilter === "all") return tasks;
 
@@ -334,7 +334,7 @@ const BoardPage: React.FC = () => {
     });
   }, [tasks, divisionFilter, memberMap]);
 
-  // ======= STATUS CHANGE (dipakai drag & drop) ======= //
+
   const handleStatusChange = async (idTask: number, status: TaskStatus) => {
     if (!taskSvc) return;
 
@@ -357,7 +357,7 @@ const BoardPage: React.FC = () => {
     }
   };
 
-  // DRAG HANDLERS
+
   const handleDragStart = (taskId: number) => {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
@@ -412,7 +412,7 @@ const BoardPage: React.FC = () => {
     handleDragEnd();
   };
 
-  // ===== BUKA MODAL EDIT =====
+
   const handleCardClick = (task: Task) => {
     if (isDragging) return;
 
@@ -427,7 +427,7 @@ const BoardPage: React.FC = () => {
     setOpenEdit(true);
   };
 
-  // ===== DELETE TASK (tanpa confirm, modal auto-close) =====
+
   const handleDeleteTask = async (idTask: number) => {
     if (!taskSvc) return;
 
@@ -480,7 +480,7 @@ const BoardPage: React.FC = () => {
     }
   };
 
-  // ======= RENDER STATE ======= //
+
   if (!projectId || !Number.isFinite(projectId)) {
     return (
       <div className="max-w-6xl mx-auto px-4 pt-6 pb-10">
@@ -516,7 +516,7 @@ const BoardPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 pt-6 pb-10 space-y-6">
-      {/* HEADER */}
+      
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl sm:text-4xl font-bold font-poppins text-quinary">
@@ -553,7 +553,7 @@ const BoardPage: React.FC = () => {
 
       <div className="w-full h-[2px] bg-primary/70 rounded-full" />
 
-      {/* BOARD */}
+      
       <div>
         {totalTasks === 0 ? (
           <div className="rounded-xl border border-dashed border-gray-300 bg-slate-50/60 px-4 py-6 text-center">
@@ -591,7 +591,7 @@ const BoardPage: React.FC = () => {
                   onDragOver={(e) => handleColumnDragOver(e, status)}
                   onDrop={() => handleColumnDrop(status)}
                 >
-                  {/* COLUMN HEADER */}
+                  
                   <div
                     className={`flex items-center justify-between px-3 py-2.5 rounded-t-2xl border-b text-xs sm:text-sm font-semibold font-poppins ${columnHeaderClass[status]}`}
                   >
@@ -601,7 +601,7 @@ const BoardPage: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* COLUMN BODY */}
+                  
                   <div className="p-3 space-y-3 transition-all duration-200 ease-out">
                     {tasksInColumn.length === 0 ? (
                       <p className="text-[11px] text-slate-400 italic text-center py-4">
@@ -629,87 +629,114 @@ const BoardPage: React.FC = () => {
                             draggable={canDrag}
                             onDragStart={() => handleDragStart(t.id)}
                             onDragEnd={handleDragEnd}
-                            className={`group rounded-2xl border px-3 py-3
-                              bg-white/95
-                              border-slate-200 shadow-xs
+                            className={`
+                              group relative rounded-2xl border px-4 py-4
+                                bg-gradient-to-b from-white via-white to-slate-50/80
+                              border-slate-200/70
+                              shadow-sm
+                              hover:shadow-lg hover:-translate-y-[3px]
                               transition-all duration-200 ease-out
-                              hover:shadow-md hover:-translate-y-[1px]
                               ${
                                 canDrag
                                   ? "cursor-grab active:cursor-grabbing"
                                   : "cursor-default"
                               }
-                              ${
-                                isRecentlyDropped
-                                  ? "bg-amber-50 border-amber-200"
-                                  : ""
-                              }`}
+                  ${
+                    isRecentlyDropped
+                      ? "bg-amber-50/90 border-amber-200 shadow-md"
+                      : ""
+                  }
+                `}
                           >
-                            {/* TOP: Division badge + more icon */}
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="inline-flex items-center rounded-full bg-sky-100 px-2.5 py-[3px] text-[10px] font-medium text-sky-700">
-                                {assigneeDivision
-                                  ? assigneeDivision.name
-                                  : "No division"}
-                              </span>
-
-                              {canEditTask && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleCardClick(t);
-                                  }}
-                                  className="inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition cursor-pointer"
-                                >
-                                  <MoreHorizontal size={14} />
-                                </button>
-                              )}
-                            </div>
-
-                            {/* TITLE */}
-                            <h4 className="font-semibold text-[13px] text-slate-900 font-poppins leading-snug mb-1.5 line-clamp-2">
-                              {t.title}
-                            </h4>
-
-                            {/* DESCRIPTION */}
-                            {t.description && (
-                              <p className="text-[11px] text-slate-600 leading-snug mb-2 line-clamp-3 break-words">
-                                {t.description}
-                              </p>
-                            )}
-
-                            {/* BOTTOM: dates + assignee */}
-                            <div className="mt-1 flex items-center justify-between gap-3 text-[10px] text-slate-500">
-                              <div className="flex gap-4">
-                                <div className="flex flex-col">
-                                  <span className="uppercase tracking-[0.08em] text-[9px] text-slate-400">
-                                    Start
-                                  </span>
-                                  <span className="font-medium text-slate-700">
-                                    {t.startDate || "-"}
-                                  </span>
+                            
+                            <div className="flex justify-between items-start mb-3.5">
+                              
+                              <div className="flex items-start gap-3">
+                                
+                                <div className="relative">
+                                  <div
+                                    className="h-9 w-9 rounded-full bg-primary text-secondary 
+                    flex items-center justify-center text-xs font-semibold shadow"
+                                  >
+                                    {assigneeUser
+                                      ? assigneeUser.name
+                                          .charAt(0)
+                                          .toUpperCase()
+                                      : "?"}
+                                  </div>
                                 </div>
-                                <div className="flex flex-col">
-                                  <span className="uppercase tracking-[0.08em] text-[9px] text-slate-400">
-                                    Due
+
+                                
+                                <div className="flex flex-col leading-tight">
+                                  <span className="text-[12px] font-semibold text-slate-900">
+                                    {assigneeUser
+                                      ? assigneeUser.name
+                                      : "Unassigned"}
                                   </span>
-                                  <span className="font-medium text-slate-700">
-                                    {t.dueDate || "-"}
+
+                                  <span
+                                    className="inline-flex items-center gap-1 mt-1 
+                     bg-slate-100 text-slate-600 px-2 py-[2px] rounded-full
+                     text-[10px] border border-slate-200"
+                                  >
+                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                    {assigneeDivision
+                                      ? assigneeDivision.name
+                                      : "No division"}
                                   </span>
                                 </div>
                               </div>
 
-                              {assigneeUser && (
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  <div className="h-6 w-6 rounded-full bg-primary text-secondary text-[10px] flex items-center justify-center font-semibold shadow-sm">
-                                    {assigneeUser.name.charAt(0).toUpperCase()}
-                                  </div>
-                                  <span className="text-[11px] font-medium text-slate-700 max-w-[90px] truncate">
-                                    {assigneeUser.name}
-                                  </span>
-                                </div>
+                              
+                              {canEditTask && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCardClick(t);
+                                  }}
+                                  className="h-7 w-7 flex items-center justify-center rounded-full 
+                   hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition"
+                                >
+                                  <MoreHorizontal size={16} />
+                                </button>
                               )}
+                            </div>
+
+                            
+                            <div className="w-full h-px bg-slate-200/70 mb-3" />
+
+                            
+                            <div className="mb-2.5">
+                              <h4 className="font-semibold text-[13px] text-slate-900 font-poppins leading-snug mb-1 line-clamp-2">
+                                {t.title}
+                              </h4>
+
+                              {t.description && (
+                                <p className="text-[11px] text-slate-600 leading-snug line-clamp-3">
+                                  {t.description}
+                                </p>
+                              )}
+                            </div>
+
+                            
+                            <div className="flex justify-between items-center text-[10px] text-slate-600 mt-2">
+                              <div className="flex flex-col">
+                                <span className="uppercase tracking-[0.12em] text-[9px] text-slate-400">
+                                  Start
+                                </span>
+                                <span className="font-medium text-slate-800 mt-[1px]">
+                                  {t.startDate || "-"}
+                                </span>
+                              </div>
+
+                              <div className="flex flex-col text-right">
+                                <span className="uppercase tracking-[0.12em] text-[9px] text-slate-400">
+                                  Due
+                                </span>
+                                <span className="font-medium text-slate-800 mt-[1px]">
+                                  {t.dueDate || "-"}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         );
@@ -723,7 +750,7 @@ const BoardPage: React.FC = () => {
         )}
       </div>
 
-      {/* MODALS */}
+      
       <AddTaskModal
         open={openAdd}
         onClose={() => setOpenAdd(false)}

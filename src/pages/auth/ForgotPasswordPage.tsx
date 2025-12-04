@@ -23,7 +23,7 @@ const ForgotPasswordPage: React.FC = () => {
     type: "error" | "success";
   } | null>(null);
 
-  // 🔹 Validasi per field
+
   const validateField = (
     field: keyof typeof errors,
     value: string,
@@ -48,7 +48,7 @@ const ForgotPasswordPage: React.FC = () => {
     return error;
   };
 
-  // 🔹 Handle perubahan input
+
   const handleChange =
     (field: keyof typeof errors) => (e: React.ChangeEvent<HTMLInputElement>) => {
       const val = e.target.value;
@@ -57,7 +57,7 @@ const ForgotPasswordPage: React.FC = () => {
       if (field === "confirmPassword") setConfirmPassword(val);
     };
 
-  // 🔹 Submit handler
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setHasSubmitted(true);
@@ -81,7 +81,7 @@ const ForgotPasswordPage: React.FC = () => {
     }
 
     try {
-      // 🔸 Nanti dihubungkan ke API reset password kamu
+
       await new Promise((res) => setTimeout(res, 800));
 
       setMessage({

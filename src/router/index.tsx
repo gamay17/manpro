@@ -23,7 +23,7 @@ const Router = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* ===== Public Routes ===== */}
+        
         <Route element={<PublicRoute />}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -33,7 +33,7 @@ const Router = () => {
           </Route>
         </Route>
 
-        {/* ===== Protected Routes (harus login) ===== */}
+        
         <Route
           element={
             <ProtectedRoute>
@@ -46,7 +46,7 @@ const Router = () => {
           <Route path="/settings" element={<SettingPage />} />
         </Route>
 
-        {/* ===== Layout khusus proyek (ProjectLayout) ===== */}
+        
         <Route
           path="/projects/:id"
           element={
@@ -55,13 +55,13 @@ const Router = () => {
             </ProtectedRoute>
           }
         >
-          {/* Halaman utama proyek (overview) */}
+          
           <Route index element={<DashboardPage />} />
           <Route path="tasks" element={<TaskPage />} />
           <Route path="Board" element={<BoardPage/>}/>
           <Route path="mytask" element={<MyTaskPage/>}/>
-          {/* nanti bisa tambahkan sub-page lain, misalnya */}
-          {/* <Route path="members" element={<ProjectMembersPage />} /> */}
+          
+          
         </Route>
       </Routes>
     </BrowserRouter>

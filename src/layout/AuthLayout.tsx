@@ -19,10 +19,10 @@ const AuthLayout: React.FC = () => {
         backgroundRepeat: "no-repeat",
       }}
     >
-      {/* Overlay + blur */}
+      
       <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-black/40 backdrop-blur-[3px]" />
 
-      {/* Card utama (semua halaman auth masuk ke sini lewat <Outlet />) */}
+      
       <div
         className="
           relative z-10 w-full max-w-md sm:max-w-lg 

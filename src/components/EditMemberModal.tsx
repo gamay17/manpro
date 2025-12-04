@@ -19,10 +19,10 @@ interface EditMemberModalProps {
 
 const easeOutQuint = cubicBezier(0.22, 1, 0.36, 1);
 
-/** Role UI yang kita pakai */
+
 type NormalizedRole = "owner" | "manager" | "leader" | "member";
 
-/** Label untuk ditampilkan */
+
 const roleLabel: Record<NormalizedRole, string> = {
   owner: "Owner",
   manager: "Manager",
@@ -30,7 +30,7 @@ const roleLabel: Record<NormalizedRole, string> = {
   member: "Member",
 };
 
-/** Normalisasi apapun role string dari data → 4 role di atas */
+
 function normalizeRole(raw: string): NormalizedRole {
   const v = raw.trim().toLowerCase();
 
@@ -145,7 +145,7 @@ const EditMemberModal: React.FC<EditMemberModalProps> = ({
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-50">
-          {/* Backdrop */}
+          {}
           <motion.div
             className="absolute inset-0 bg-black/60 backdrop-blur-[1.5px]"
             initial={{ opacity: 0 }}
@@ -154,7 +154,7 @@ const EditMemberModal: React.FC<EditMemberModalProps> = ({
             onClick={onClose}
           />
 
-          {/* Modal */}
+          {}
           <motion.div
             role="dialog"
             aria-modal="true"
@@ -173,10 +173,10 @@ const EditMemberModal: React.FC<EditMemberModalProps> = ({
               transition: { duration: 0.25, ease: easeOutQuint },
             }}
           >
-            {/* Header */}
+            {}
             <div className="mb-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                {/* pakai warna primary */}
+                {}
                 <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-black">
                   <UserCog size={18} />
                 </div>
@@ -190,7 +190,7 @@ const EditMemberModal: React.FC<EditMemberModalProps> = ({
                 </div>
               </div>
 
-              {/* Role badge (read-only) */}
+              {}
               <div>
                 <span
                   className={`
@@ -211,12 +211,12 @@ const EditMemberModal: React.FC<EditMemberModalProps> = ({
               </div>
             </div>
 
-            {/* garis accent pakai primary */}
+            {}
             <div className="mb-3 h-0.5 w-full bg-gradient-to-r from-primary to-amber-300 rounded" />
 
-            {/* Form */}
+            {}
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* User (read-only) */}
+              {}
               <div>
                 <label className="block text-sm font-semibold mb-1">
                   User
@@ -237,7 +237,7 @@ const EditMemberModal: React.FC<EditMemberModalProps> = ({
                 </div>
               </div>
 
-              {/* Division select – custom dropdown ala EditTaskModal */}
+              {}
               <div ref={divisionRef} className="relative">
                 <label className="block text-sm font-semibold mb-1">
                   Division <span className="text-rose-600">*</span>
@@ -314,9 +314,9 @@ const EditMemberModal: React.FC<EditMemberModalProps> = ({
                 )}
               </div>
 
-              {/* Footer buttons */}
+              {}
               <div className="mt-4 flex items-center justify-between gap-3">
-                {/* Delete */}
+                {}
                 <div>
                   {canDelete ? (
                     <button
@@ -334,7 +334,7 @@ const EditMemberModal: React.FC<EditMemberModalProps> = ({
                   )}
                 </div>
 
-                {/* Confirm / Cancel */}
+                {}
                 <div className="flex gap-2">
                   <button
                     type="button"

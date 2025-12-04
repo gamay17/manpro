@@ -1,26 +1,23 @@
-// src/components/AddDivisionModal.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, cubicBezier } from "framer-motion";
 import { FolderPlus } from "lucide-react";
 import type { CreateDivisionInput, Division } from "../types/division";
 import type { Member } from "../types/member";
 import type { IRegisterResponse } from "../types/auth";
+import type { Project } from "../types/project";
+import { isRangeValid, validateDivisionDates } from "../utils/timerules";
 
 interface AddDivisionModalProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (data: CreateDivisionInput) => void;
-
-  /** Daftar division yang sudah ada di project ini */
   existingDivisions: Division[];
-
-  /** Semua member di project ini (untuk blok user yang sudah punya role spesial) */
   existingMembers: Member[];
+  project: Project;
 }
 
 const easeOutQuint = cubicBezier(0.22, 1, 0.36, 1);
 
-// Tipe lokal: user yang mungkin punya role
 type UserWithRole = IRegisterResponse & { role?: string };
 
 const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
@@ -29,26 +26,24 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
   onSubmit,
   existingDivisions,
   existingMembers,
+  project,
 }) => {
   const [form, setForm] = useState<CreateDivisionInput>({
     name: "",
     mainTask: "",
     coordinatorId: "",
-    status: "todo", // selalu default todo
+    status: "todo",
     startDate: "",
     dueDate: "",
   });
-
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [coordInput, setCoordInput] = useState("");
   const [coordOpen, setCoordOpen] = useState(false);
-
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const nameRef = useRef<HTMLInputElement>(null);
   const coordRef = useRef<HTMLDivElement>(null);
 
-  // Nama division yang sudah terpakai
   const existingNames = useMemo(
     () =>
       new Set(
@@ -59,7 +54,6 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
     [existingDivisions]
   );
 
-  // User yang sudah jadi koordinator di division lain
   const usedCoordinatorIds = useMemo(
     () =>
       new Set(
@@ -70,22 +64,16 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
     [existingDivisions]
   );
 
-  // User yang punya role spesial di project (owner / manager / leader)
   const usedSpecialRoleUserIds = useMemo(
     () =>
       new Set(
         existingMembers
-          .filter(
-            (m) =>
-              m.role &&
-              m.role.toLowerCase() !== "member" // selain member
-          )
+          .filter((m) => m.role && m.role.toLowerCase() !== "member")
           .map((m) => m.userId)
       ),
     [existingMembers]
   );
 
-  // Ambil list user dari localStorage
   useEffect(() => {
     if (!open) return;
 
@@ -100,7 +88,6 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
         UserWithRole & { password?: string }
       >;
 
-      // Ambil field yang dipakai saja, tanpa password
       const cleaned: UserWithRole[] = parsed.map((u) => ({
         id: u.id,
         name: u.name,
@@ -116,7 +103,6 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
     }
   }, [open]);
 
-  // Reset form saat modal dibuka
   useEffect(() => {
     if (open) {
       setForm({
@@ -124,17 +110,16 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
         mainTask: "",
         coordinatorId: "",
         status: "todo",
-        startDate: "",
-        dueDate: "",
+        startDate: project.startDate ?? "",
+        dueDate: project.endDate ?? "",
       });
       setCoordInput("");
       setCoordOpen(false);
       setError("");
       setTimeout(() => nameRef.current?.focus(), 60);
     }
-  }, [open]);
+  }, [open, project.startDate, project.endDate]);
 
-  // Tutup dropdown koordinator kalau klik di luar
   useEffect(() => {
     if (!coordOpen) return;
 
@@ -156,27 +141,21 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
       setError("");
     };
 
-  // Filter user yang boleh jadi koordinator (leader baru)
   const filteredUsers = useMemo(() => {
     const q = coordInput.trim().toLowerCase();
-    const blockedRoles = ["owner", "manager"]; // member boleh jadi leader
+    const blockedRoles = ["owner", "manager"];
 
     return users
-      // role tertentu di auth tidak boleh jadi leader
       .filter((u) => {
         if (!u.role) return true;
         return !blockedRoles.includes(u.role.toLowerCase());
       })
-      // tidak boleh koordinator di 2 division
       .filter((u) => !usedCoordinatorIds.has(u.id))
-      // tidak boleh punya role spesial lain di project (owner/manager/leader)
       .filter((u) => !usedSpecialRoleUserIds.has(u.id))
-      // filter teks
       .filter((u) => {
         if (!q) return true;
         return (
-          u.name.toLowerCase().includes(q) ||
-          u.email.toLowerCase().includes(q)
+          u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
         );
       });
   }, [users, coordInput, usedCoordinatorIds, usedSpecialRoleUserIds]);
@@ -193,10 +172,6 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
 
   const isDuplicateName =
     trimmedName && existingNames.has(trimmedName.toLowerCase());
-
-  // ❗ Tidak boleh pilih user yang:
-  //    - sudah jadi coordinator di division lain
-  //    - atau punya role spesial lain di project (owner/manager/leader)
   const isCoordinatorAlreadyUsed =
     !!form.coordinatorId &&
     (usedCoordinatorIds.has(form.coordinatorId) ||
@@ -209,14 +184,11 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
     (form.dueDate || "") &&
     (form.coordinatorId || "");
 
-  const validDateRange =
-    form.startDate &&
-    form.dueDate &&
-    new Date(form.dueDate).getTime() >= new Date(form.startDate).getTime();
+  const validOwnRange = isRangeValid(form.startDate, form.dueDate);
 
   const canSubmit =
     !!allFilled &&
-    validDateRange &&
+    validOwnRange &&
     !isDuplicateName &&
     !isCoordinatorAlreadyUsed;
 
@@ -230,11 +202,30 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
         setError(
           "This user is already a leader/owner/manager in this project and cannot be a coordinator."
         );
-      } else if (!validDateRange) {
+      } else if (!validOwnRange) {
         setError("Due date must be greater than or equal to start date.");
       } else {
         setError("All required fields must be filled.");
       }
+      return;
+    }
+
+    const fakeDivision: Division = {
+      id: 0,
+      projectId: project.id,
+      name: trimmedName,
+      mainTask: trimmedMainTask,
+      coordinatorId: form.coordinatorId,
+      status: "todo",
+      startDate: form.startDate,
+      dueDate: form.dueDate,
+      createdAt: undefined,
+      updatedAt: undefined,
+    };
+
+    const dateErrors = validateDivisionDates(project, fakeDivision);
+    if (dateErrors.length > 0) {
+      setError(dateErrors.join(" "));
       return;
     }
 
@@ -258,8 +249,8 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
         mainTask: "",
         coordinatorId: "",
         status: "todo",
-        startDate: "",
-        dueDate: "",
+        startDate: project.startDate ?? "",
+        dueDate: project.endDate ?? "",
       });
       setCoordInput("");
       setError("");
@@ -273,7 +264,7 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-50">
-          {/* Backdrop */}
+          {}
           <motion.div
             className="absolute inset-0 bg-black/60 backdrop-blur-[1.5px]"
             initial={{ opacity: 0 }}
@@ -282,7 +273,7 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
             onClick={onClose}
           />
 
-          {/* Modal */}
+          {}
           <motion.div
             role="dialog"
             aria-modal="true"
@@ -301,7 +292,7 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
               transition: { duration: 0.25, ease: easeOutQuint },
             }}
           >
-            {/* Header */}
+            {}
             <div className="mb-4 flex items-center gap-3">
               <div className="grid h-9 w-9 place-items-center rounded-lg bg-amber-400 text-black">
                 <FolderPlus size={18} />
@@ -317,9 +308,7 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
             </div>
             <div className="mb-3 h-0.5 w-full bg-gradient-to-r from-amber-400 to-amber-300 rounded" />
 
-            {/* Form */}
             <form onSubmit={submit} className="space-y-3">
-              {/* Division Name */}
               <div>
                 <label className="block text-sm font-semibold mb-1">
                   Division Name <span className="text-rose-600">*</span>
@@ -344,7 +333,6 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
                 )}
               </div>
 
-              {/* Main Task */}
               <div>
                 <label className="block text-sm font-semibold mb-1">
                   Main Task <span className="text-rose-600">*</span>
@@ -357,7 +345,6 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
                 />
               </div>
 
-              {/* Dates */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-semibold mb-1">
@@ -367,6 +354,8 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
                     type="date"
                     value={form.startDate ?? ""}
                     onChange={setField("startDate")}
+                    min={project.startDate || undefined}
+                    max={form.dueDate || project.endDate || undefined}
                     className="w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
                   />
                 </div>
@@ -379,14 +368,16 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
                     type="date"
                     value={form.dueDate ?? ""}
                     onChange={setField("dueDate")}
+                    min={form.startDate || project.startDate || undefined}
+                    max={project.endDate || undefined}
                     className={`w-full rounded-md border px-3 py-2 text-sm outline-none bg-gray-100 transition
                       ${
-                        validDateRange
+                        validOwnRange
                           ? "border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
                           : "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
                       }`}
                   />
-                  {!validDateRange && form.startDate && form.dueDate && (
+                  {!validOwnRange && form.startDate && form.dueDate && (
                     <p className="mt-1 text-[11px] text-rose-600">
                       Due date must be greater than or equal to start date.
                     </p>
@@ -394,7 +385,6 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
                 </div>
               </div>
 
-              {/* Coordinator */}
               <div ref={coordRef} className="relative">
                 <label className="block text-sm font-semibold mb-1">
                   Coordinator <span className="text-rose-600">*</span>
@@ -449,7 +439,8 @@ const AddDivisionModal: React.FC<AddDivisionModalProps> = ({
                 )}
                 {isCoordinatorAlreadyUsed && (
                   <p className="mt-1 text-[11px] text-rose-600">
-                    This user is already a leader/owner/manager in this project and cannot be a coordinator.
+                    This user is already a leader/owner/manager in this project
+                    and cannot be a coordinator.
                   </p>
                 )}
               </div>

@@ -9,10 +9,13 @@ import type {
 } from "../types/division";
 import type { IRegisterResponse } from "../types/auth";
 import type { Member } from "../types/member";
+import type { Project } from "../types/project";
+import { isRangeValid, validateDivisionDates } from "../utils/timerules";
 
 interface EditDivisionModalProps {
   open: boolean;
   division: Division | null; // data divisi yang diedit
+  project: Project; // batas waktu parent project
   users: IRegisterResponse[];
   existingDivisions: Division[];
   existingMembers: Member[];
@@ -39,6 +42,7 @@ type UserWithRole = IRegisterResponse & { role?: string };
 const EditDivisionModal: React.FC<EditDivisionModalProps> = ({
   open,
   division,
+  project,
   users,
   existingDivisions,
   existingMembers,
@@ -237,13 +241,10 @@ const EditDivisionModal: React.FC<EditDivisionModalProps> = ({
     (form.dueDate || "") &&
     (form.coordinatorId || "");
 
-  const validDateRange =
-    form.startDate &&
-    form.dueDate &&
-    new Date(form.dueDate).getTime() >= new Date(form.startDate).getTime();
-
+  // validasi range tanggal division sendiri
+  const validOwnRange = isRangeValid(form.startDate, form.dueDate);
   const isDateError =
-    !!form.startDate && !!form.dueDate && !validDateRange;
+    !!form.startDate && !!form.dueDate && !validOwnRange;
 
   const canSubmit =
     !!allFilled &&
@@ -253,7 +254,7 @@ const EditDivisionModal: React.FC<EditDivisionModalProps> = ({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSubmit || !division) {
+    if (!division || !canSubmit) {
       if (isDuplicateName) {
         setError("Division name already exists in this project.");
       } else if (isCoordinatorAlreadyUsed) {
@@ -265,6 +266,26 @@ const EditDivisionModal: React.FC<EditDivisionModalProps> = ({
       } else {
         setError("All required fields must be filled.");
       }
+      return;
+    }
+
+    // Validasi division terhadap batas waktu project
+    const fakeDivision: Division = {
+      id: division.id,
+      projectId: division.projectId,
+      name: trimmedName,
+      mainTask: trimmedMainTask,
+      coordinatorId: form.coordinatorId,
+      status: form.status,
+      startDate: form.startDate,
+      dueDate: form.dueDate,
+      createdAt: division.createdAt,
+      updatedAt: division.updatedAt,
+    };
+
+    const dateErrors = validateDivisionDates(project, fakeDivision);
+    if (dateErrors.length > 0) {
+      setError(dateErrors.join(" "));
       return;
     }
 
@@ -294,7 +315,7 @@ const EditDivisionModal: React.FC<EditDivisionModalProps> = ({
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-50">
-          {/* Backdrop */}
+          {}
           <motion.div
             className="absolute inset-0 bg-black/60 backdrop-blur-[1.5px]"
             initial={{ opacity: 0 }}
@@ -303,7 +324,7 @@ const EditDivisionModal: React.FC<EditDivisionModalProps> = ({
             onClick={onClose}
           />
 
-          {/* Modal */}
+          {}
           <motion.div
             role="dialog"
             aria-modal="true"
@@ -322,7 +343,7 @@ const EditDivisionModal: React.FC<EditDivisionModalProps> = ({
               transition: { duration: 0.25, ease: easeOutQuint },
             }}
           >
-            {/* Header */}
+            {}
             <div className="mb-4 flex items-center gap-3">
               <div className="grid h-9 w-9 place-items-center rounded-lg bg-amber-400 text-black">
                 <FolderPlus size={18} />
@@ -338,14 +359,14 @@ const EditDivisionModal: React.FC<EditDivisionModalProps> = ({
             </div>
             <div className="mb-3 h-0.5 w-full bg-gradient-to-r from-amber-400 to-amber-300 rounded" />
 
-            {/* Info kecil */}
+            {}
             <p className="text-[11px] text-gray-500 mb-3">
               Division name must be unique, each user can only lead one division, and owner/manager cannot be a division leader.
             </p>
 
-            {/* Form */}
+            {}
             <form onSubmit={submit} className="space-y-3">
-              {/* Division Name */}
+              {}
               <div>
                 <label className="block text-sm font-semibold mb-1">
                   Division Name <span className="text-rose-600">*</span>
@@ -370,7 +391,7 @@ const EditDivisionModal: React.FC<EditDivisionModalProps> = ({
                 )}
               </div>
 
-              {/* Main Task */}
+              {}
               <div>
                 <label className="block text-sm font-semibold mb-1">
                   Main Task <span className="text-rose-600">*</span>
@@ -383,9 +404,9 @@ const EditDivisionModal: React.FC<EditDivisionModalProps> = ({
                 />
               </div>
 
-              {/* Status + Dates */}
+              {}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {/* Status */}
+                {}
                 <div ref={statusRef}>
                   <label className="block text-sm font-semibold mb-1">
                     Status
@@ -465,7 +486,7 @@ const EditDivisionModal: React.FC<EditDivisionModalProps> = ({
                   </div>
                 </div>
 
-                {/* Start Date */}
+                {}
                 <div>
                   <label className="block text-sm font-semibold mb-1">
                     Start Date <span className="text-rose-600">*</span>
@@ -474,11 +495,13 @@ const EditDivisionModal: React.FC<EditDivisionModalProps> = ({
                     type="date"
                     value={form.startDate || ""}
                     onChange={setField("startDate")}
+                    min={project.startDate || undefined}
+                    max={form.dueDate || project.endDate || undefined}
                     className="w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
                   />
                 </div>
 
-                {/* Due Date */}
+                {}
                 <div>
                   <label className="block text-sm font-semibold mb-1">
                     Due Date <span className="text-rose-600">*</span>
@@ -487,6 +510,8 @@ const EditDivisionModal: React.FC<EditDivisionModalProps> = ({
                     type="date"
                     value={form.dueDate || ""}
                     onChange={setField("dueDate")}
+                    min={form.startDate || project.startDate || undefined}
+                    max={project.endDate || undefined}
                     className={`w-full rounded-md border px-3 py-2 text-sm outline-none bg-gray-100 transition
                       ${
                         isDateError
@@ -502,7 +527,7 @@ const EditDivisionModal: React.FC<EditDivisionModalProps> = ({
                 </div>
               </div>
 
-              {/* Coordinator - autocomplete */}
+              {}
               <div ref={coordRef} className="relative">
                 <label className="block text-sm font-semibold mb-1">
                   Coordinator <span className="text-rose-600">*</span>
@@ -518,7 +543,8 @@ const EditDivisionModal: React.FC<EditDivisionModalProps> = ({
                   }}
                   onFocus={() => setCoordOpen(true)}
                   placeholder="Search user by name or email"
-                  className={`w-full rounded-md border bg-gray-100 px-3 py-2 text-sm outline-none transition
+                  className={`
+                    w-full rounded-md border bg-gray-100 px-3 py-2 text-sm outline-none transition
                     ${
                       isCoordinatorAlreadyUsed
                         ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
@@ -568,9 +594,9 @@ const EditDivisionModal: React.FC<EditDivisionModalProps> = ({
                 </p>
               )}
 
-              {/* Footer */}
+              {}
               <div className="mt-4 flex justify-between gap-2">
-                {/* Delete */}
+                {}
                 <button
                   type="button"
                   onClick={() => onDelete(division.id)}

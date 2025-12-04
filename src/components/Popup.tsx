@@ -65,7 +65,7 @@ const Popup = ({ onLogout, onClose }: PopupProps) => {
         </p>
       </div>
 
-      {/* Tombol Logout */}
+      {}
       <button
         onClick={handleLogoutClick}
         className="flex items-center gap-2 w-full p-2 rounded hover:bg-gray-100 text-red-500 font-medium transition-all"

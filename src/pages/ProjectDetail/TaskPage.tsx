@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useParams } from "react-router-dom";
 import { Plus, ChevronDown } from "lucide-react";
@@ -29,7 +30,7 @@ const statusLabel: Record<TaskStatus, string> = {
   done: "Done",
 };
 
-// Warna status lebih soft/modern
+
 const statusColorClass: Record<TaskStatus, string> = {
   todo: "bg-amber-50 text-amber-700 border border-amber-200",
   "in-progress": "bg-sky-50 text-sky-700 border border-sky-200",
@@ -37,7 +38,7 @@ const statusColorClass: Record<TaskStatus, string> = {
   done: "bg-emerald-50 text-emerald-700 border border-emerald-200",
 };
 
-// opsi status untuk dropdown custom
+
 const statusOptions: TaskStatus[] = ["todo", "in-progress", "review", "done"];
 
 interface StatusDropdownProps {
@@ -46,7 +47,7 @@ interface StatusDropdownProps {
   onChange: (status: TaskStatus) => void;
 }
 
-// dropdown custom buat status (ganti <select> bawaan)
+
 const StatusDropdown: React.FC<StatusDropdownProps> = ({
   status,
   canChange,
@@ -133,10 +134,10 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({
   );
 };
 
-// Util kecil untuk format tanggal, biar lebih konsisten
+
 const formatDate = (value?: string | null) => {
   if (!value) return "";
-  // Jika sudah yyyy-mm-dd, cukup tampilkan apa adanya
+
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -190,7 +191,10 @@ const TaskPage: React.FC = () => {
   }, [divisions]);
 
   const projectSvc = React.useMemo(
-    () => (currentUserId ? createProjectService(currentUserId) : null),
+    () =>
+      currentUserId
+        ? createProjectService(String(currentUserId))
+        : null,
     [currentUserId]
   );
 
@@ -225,7 +229,7 @@ const TaskPage: React.FC = () => {
     return map;
   }, [divisions]);
 
-  // helper untuk cek permission per task
+
   const getTaskPermission = React.useCallback(
     (task: Task) => {
       const assignee = task.assigneeId
@@ -243,7 +247,7 @@ const TaskPage: React.FC = () => {
       const isAssignee =
         !!currentMemberId && assignee?.id === currentMemberId;
 
-      const canEditTask = canManageAll || isLeaderForThisTask;
+      const canEditTask = canManageAll || isLeaderForThisTask; // dipakai hanya untuk "boleh buka modal + dianggap editor"
       const canChangeStatus =
         canManageAll || isLeaderForThisTask || isAssignee;
 
@@ -257,7 +261,7 @@ const TaskPage: React.FC = () => {
     [canManageAll, currentUserId, currentMemberId, memberMap, divisionMap]
   );
 
-  // Leader = ada division yg coordinatorId-nya current user
+
   const isLeader = React.useMemo(
     () =>
       !!currentUserId &&
@@ -265,11 +269,11 @@ const TaskPage: React.FC = () => {
     [divisions, currentUserId]
   );
 
-  const canCreateTask = canManageAll || isLeader;
+  const canCreateTask = (canManageAll || isLeader) && !!taskSvc;
 
-  // daftar member yang boleh jadi assignee di AddTaskModal
-  // - Owner/Manager: semua member
-  // - Leader: hanya anggota divisinya + dirinya sendiri
+
+
+
   const membersForAdd = React.useMemo(() => {
     if (canManageAll) return members;
     if (!isLeader || !currentUserId) return members;
@@ -313,7 +317,7 @@ const TaskPage: React.FC = () => {
           project.managerId === currentUserId;
         setCanManageAll(isOwnerOrManager);
 
-        // === Members ===
+
         let allMembers: Member[] = [];
         try {
           const raw = localStorage.getItem("members");
@@ -339,7 +343,7 @@ const TaskPage: React.FC = () => {
           setCurrentMemberId(meMember?.id ?? null);
         }
 
-        // === Divisions ===
+
         let divs: Division[] = [];
 
         try {
@@ -378,13 +382,13 @@ const TaskPage: React.FC = () => {
 
         if (!cancelled) setDivisions(divs);
 
-        // === Tasks ===
+
         if (taskSvc) {
           const ts = await taskSvc.getAll();
           if (!cancelled) setTasks(ts);
         }
 
-        // === Users ===
+
         try {
           const raw = localStorage.getItem("auth:users");
           if (raw) {
@@ -445,18 +449,15 @@ const TaskPage: React.FC = () => {
     });
   }, [tasks, divisionFilter, memberMap]);
 
-  // 🔐 Ubah status: Owner/Manager (canManageAll),
-  // Leader utk task di divisinya, atau member utk task yg dia assignee.
-  const handleStatusChange = async (idTask: number, value: string) => {
+
+  const handleStatusChange = async (idTask: number, status: TaskStatus) => {
     if (!taskSvc) return;
-    const status = value as TaskStatus;
 
     const task = tasks.find((t) => t.id === idTask);
     if (!task) return;
 
     const { canChangeStatus } = getTaskPermission(task);
     if (!canChangeStatus) {
-      // guard ekstra kalau ada manipulasi di UI
       alert("Anda tidak punya izin mengubah status task ini.");
       return;
     }
@@ -475,23 +476,24 @@ const TaskPage: React.FC = () => {
     }
   };
 
-  // 🔐 Buka modal edit:
-  // Owner/Manager dan Leader (untuk task di divisinya) bisa edit semua field.
-  // Member biasa tidak bisa buka modal sama sekali.
+
+
+
   const handleRowClick = (task: Task) => {
-    const { canEditTask } = getTaskPermission(task);
-    if (!canEditTask) return;
+    const { isLeaderForThisTask, isAssignee } = getTaskPermission(task);
+
+    const canOpenModal = canManageAll || isLeaderForThisTask || isAssignee;
+    if (!canOpenModal) return;
 
     setEditingTask(task);
-    // sekarang: yang bisa buka modal (owner/manager & leader) dapat full edit
     setEditPermission({
-      canEditAllFields: true,
-      canChangeStatusOnly: false,
+      canEditAllFields: canManageAll, // hanya Owner/Manager yang boleh edit field & delete
+      canChangeStatusOnly: false, // Leader & Member → modal read-only, status tetap via dropdown di tabel
     });
     setOpenEdit(true);
   };
 
-  // 🧹 Hapus task: TANPA confirm popup, dan modal otomatis tertutup
+
   const handleDeleteTask = async (idTask: number) => {
     if (!taskSvc) return;
 
@@ -529,13 +531,13 @@ const TaskPage: React.FC = () => {
     }
   };
 
-  // 🔐 Simpan edit dari modal:
-  // Sekali lagi cek: hanya Owner/Manager atau Leader divisi task ini.
+
+
   const handleSubmitEdit = async (input: CreateTaskInput) => {
     if (!taskSvc || !editingTask) return;
 
     const { canEditTask } = getTaskPermission(editingTask);
-    if (!canEditTask) {
+    if (!canEditTask || !canManageAll) {
       alert("Anda tidak punya izin mengubah task ini.");
       return;
     }
@@ -546,6 +548,7 @@ const TaskPage: React.FC = () => {
         prev.map((t) => (t.id === updated.id ? updated : t))
       );
       setOpenEdit(false);
+      setEditingTask(null);
     } catch (err) {
       const message =
         err instanceof Error
@@ -588,12 +591,8 @@ const TaskPage: React.FC = () => {
   const hasAnyTask = tasks.length > 0;
 
   return (
-    <div
-      className="
-        max-w-6xl mx-auto px-4 pt-6 pb-10 space-y-6
-      "
-    >
-      {/* ===== Header + filter ===== */}
+    <div className="max-w-6xl mx-auto px-4 pt-6 pb-10 space-y-6">
+      
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
@@ -634,7 +633,7 @@ const TaskPage: React.FC = () => {
         <div className="w-full h-[3px] rounded-full bg-gradient-to-r from-primary via-amber-400 to-transparent" />
       </div>
 
-      {/* ====== CARD LIST TASK ====== */}
+      
       <div
         className="
           bg-white/90 backdrop-blur-sm
@@ -642,7 +641,7 @@ const TaskPage: React.FC = () => {
           shadow-[0_22px_60px_rgba(15,23,42,0.12)]
         "
       >
-        {/* Header card */}
+        
         <div className="flex items-center justify-between px-4 sm:px-6 pt-4 pb-3 border-b border-slate-100/80">
           <div>
             <h3 className="text-base sm:text-lg font-semibold text-slate-900">
@@ -726,10 +725,11 @@ const TaskPage: React.FC = () => {
                       ? divisionMap.get(assignee.divisionId)
                       : undefined;
 
-                    const { canEditTask, canChangeStatus } =
+                    const { canEditTask, canChangeStatus, isAssignee } =
                       getTaskPermission(t);
 
-                    const rowClickable = canEditTask;
+
+                    const rowClickable = canEditTask || isAssignee;
 
                     return (
                       <tr
@@ -836,7 +836,7 @@ const TaskPage: React.FC = () => {
         </div>
       </div>
 
-      {/* MODALS */}
+      
       <AddTaskModal
         open={openAdd}
         onClose={() => setOpenAdd(false)}
@@ -844,6 +844,8 @@ const TaskPage: React.FC = () => {
         members={membersForAdd}
         divisions={divisions}
         users={users}
+      
+        
       />
 
       <EditTaskModal

@@ -1,4 +1,3 @@
-// src/types/project.ts
 export type ProjectStatus = "completed" | "in-progress";
 
 export interface Project {
@@ -8,16 +7,12 @@ export interface Project {
   description?: string;
   startDate?: string;
   endDate?: string;
-
-  // relasi user
-  ownerId: string;      // yang membuat project
-  managerId?: string;   // PM (user.id)
+  ownerId: string;      
+  managerId?: string;   
 
   createdAt?: string;
   updatedAt?: string;
 }
-
-// form dari UI: kita tidak isi id, ownerId, status, createdAt, updatedAt
 export type CreateProjectInput = Omit<
   Project,
   "id" | "createdAt" | "updatedAt" | "status" | "ownerId"

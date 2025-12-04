@@ -1,3 +1,4 @@
+// src/components/EditTaskModal.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, cubicBezier } from "framer-motion";
 import { ListTodo, Trash2, ChevronDown } from "lucide-react";
@@ -6,6 +7,8 @@ import type { Task, TaskStatus, CreateTaskInput } from "../types/task";
 import type { Member } from "../types/member";
 import type { Division } from "../types/division";
 import type { IRegisterResponse } from "../types/auth";
+
+import { isRangeValid, isChildWithinParent } from "../utils/timerules";
 
 interface EditTaskModalProps {
   open: boolean;
@@ -19,7 +22,7 @@ interface EditTaskModalProps {
   onSubmit: (data: CreateTaskInput) => void;
   onDelete: (id: number) => void;
 
-  /** 
+  /**
    * canEditAllFields = true → boleh edit semua field & delete
    * canChangeStatusOnly = true → hanya boleh ganti status
    * Jika keduanya undefined → default full edit.
@@ -151,7 +154,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
   const setField =
     (key: keyof CreateTaskInput) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      if (!fullEdit) return; // status-only mode tidak boleh ubah field lain
+      if (!fullEdit) return; // status-only / view-only tidak boleh ubah field lain
       setForm((prev) => ({ ...prev, [key]: e.target.value }));
       setError("");
     };
@@ -179,7 +182,26 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
 
   const selectAssignee = (member: Member, label: string) => {
     if (!fullEdit) return;
-    setForm((prev) => ({ ...prev, assigneeId: member.id }));
+
+    const div = divisionMap.get(member.divisionId);
+
+    setForm((prev) => {
+      let next: CreateTaskInput = { ...prev, assigneeId: member.id };
+
+      // kalau tanggal existing di luar range division baru → reset tanggal
+      if (
+        div &&
+        !isChildWithinParent(
+          { startDate: div.startDate, endDate: div.dueDate },
+          { startDate: next.startDate, dueDate: next.dueDate }
+        )
+      ) {
+        next = { ...next, startDate: "", dueDate: "" };
+      }
+
+      return next;
+    });
+
     setAssigneeInput(label);
     setAssigneeOpen(false);
     setError("");
@@ -194,26 +216,68 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
     (form.dueDate || "") &&
     form.assigneeId;
 
-  const validDateRange =
-    form.startDate &&
-    form.dueDate &&
-    new Date(form.dueDate).getTime() >= new Date(form.startDate).getTime();
+  // 🔎 cari division dari assignee (kalau ada)
+  const assigneeMember = form.assigneeId
+    ? memberMap.get(form.assigneeId)
+    : undefined;
+  const assigneeDivision = assigneeMember
+    ? divisionMap.get(assigneeMember.divisionId)
+    : undefined;
 
-  const isDateError =
-    !!form.startDate && !!form.dueDate && !validDateRange;
+  // ✅ 1) cek range task sendiri: start <= due
+  const validOwnRange = isRangeValid(form.startDate, form.dueDate);
 
-  const canSubmit = !!allFilled && !isDateError;
+  // ✅ 2) cek task di dalam range division assignee
+  const withinDivision = assigneeDivision
+    ? isChildWithinParent(
+        {
+          startDate: assigneeDivision.startDate,
+          endDate: assigneeDivision.dueDate,
+        },
+        { startDate: form.startDate, dueDate: form.dueDate }
+      )
+    : true;
+
+  // gabungkan error tanggal
+  let dateErrorMsg = "";
+  if (form.startDate && form.dueDate) {
+    if (!validOwnRange) {
+      dateErrorMsg = "Due date must be greater than or equal to start date.";
+    } else if (!withinDivision) {
+      dateErrorMsg =
+        "Task dates must be within the date range of the assignee's division.";
+    }
+  }
+  const hasDateError = !!dateErrorMsg;
+
+  const canSubmit = !!allFilled && !hasDateError;
+
+  // 🎯 Batas tanggal untuk input, supaya tidak bisa pilih di luar range division
+  const divisionStart = assigneeDivision?.startDate || "";
+  const divisionEnd = assigneeDivision?.dueDate || "";
+
+  const startMin = fullEdit ? (divisionStart || undefined) : undefined;
+  const startMax = fullEdit
+    ? ((form.dueDate || divisionEnd || "") || undefined)
+    : undefined;
+
+  const dueMin = fullEdit
+    ? ((form.startDate || divisionStart || "") || undefined)
+    : undefined;
+  const dueMax = fullEdit ? (divisionEnd || undefined) : undefined;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!canSubmit) {
+    if (!canSubmit || !canChangeStatus) {
       if (!trimmedTitle) {
         setError("Task title is required.");
       } else if (!form.assigneeId) {
         setError("Assignee is required.");
-      } else if (isDateError) {
-        setError("Due date must be greater than or equal to start date.");
+      } else if (hasDateError) {
+        setError(dateErrorMsg);
+      } else if (!canChangeStatus) {
+        setError("Anda tidak memiliki izin untuk menyimpan perubahan.");
       } else {
         setError("All required fields must be filled.");
       }
@@ -242,11 +306,18 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
 
   if (!task) return null;
 
+  // teks info kecil di header
+  const infoText = fullEdit
+    ? "Update task details, status, and assignee."
+    : canChangeStatusOnly
+    ? "Anda hanya dapat mengubah status task ini."
+    : "Anda hanya dapat melihat detail task ini.";
+
   return (
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-50">
-          {/* Backdrop */}
+          {}
           <motion.div
             className="absolute inset-0 bg-black/60 backdrop-blur-[1.5px]"
             initial={{ opacity: 0 }}
@@ -255,7 +326,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
             onClick={onClose}
           />
 
-          {/* Modal */}
+          {}
           <motion.div
             role="dialog"
             aria-modal="true"
@@ -274,7 +345,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
               transition: { duration: 0.25, ease: easeOutQuint },
             }}
           >
-            {/* Header */}
+            {}
             <div className="mb-4 flex items-center gap-3">
               <div className="grid h-9 w-9 place-items-center rounded-lg bg-amber-400 text-black">
                 <ListTodo size={18} />
@@ -284,22 +355,20 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                   Edit Task
                 </h3>
                 <p className="text-[11px] sm:text-xs text-gray-500">
-                  {fullEdit
-                    ? "Update task details, status, and assignee."
-                    : "Anda hanya dapat mengubah status task ini."}
+                  {infoText}
                 </p>
               </div>
             </div>
             <div className="mb-3 h-0.5 w-full bg-gradient-to-r from-amber-400 to-amber-300 rounded" />
 
-            {/* Info kecil */}
+            {}
             <p className="text-[11px] text-gray-500 mb-3">
               Task must have a title, assignee, and valid date range.
             </p>
 
-            {/* Form */}
+            {}
             <form onSubmit={submit} className="space-y-3">
-              {/* Title */}
+              {}
               <div>
                 <label className="block text-sm font-semibold mb-1">
                   Task Title <span className="text-rose-600">*</span>
@@ -322,7 +391,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                 />
               </div>
 
-              {/* Description */}
+              {}
               <div>
                 <label className="block text-sm font-semibold mb-1">
                   Description
@@ -332,22 +401,24 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                   onChange={setField("description")}
                   placeholder="Short description of this task (optional)"
                   disabled={!fullEdit}
-                  className={`w-full resize-none rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200
-                    ${!fullEdit ? "opacity-70 cursor-not-allowed" : ""}
-                  `}
+                  className={`w-full resize-none rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm outline-none ${
+                    !fullEdit
+                      ? "opacity-70 cursor-not-allowed"
+                      : "focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  }`}
                   rows={3}
                 />
               </div>
 
-              {/* Status + Dates */}
+              {}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {/* Status */}
+                {}
                 <div ref={statusRef}>
                   <label className="block text-sm font-semibold mb-1">
                     Status
                   </label>
 
-                  {/* Custom Status Dropdown */}
+                  {}
                   <div className="relative">
                     <button
                       type="button"
@@ -364,7 +435,9 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                             ? "border-amber-500 ring-2 ring-amber-200"
                             : "border-gray-300 hover:border-amber-400"
                         }
-                        ${!canChangeStatus ? "opacity-70 cursor-not-allowed" : ""}
+                        ${
+                          !canChangeStatus ? "opacity-70 cursor-not-allowed" : ""
+                        }
                       `}
                     >
                       <span>
@@ -425,7 +498,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                   </div>
                 </div>
 
-                {/* Start Date */}
+                {}
                 <div>
                   <label className="block text-sm font-semibold mb-1">
                     Start Date <span className="text-rose-600">*</span>
@@ -435,13 +508,17 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                     value={form.startDate || ""}
                     onChange={setField("startDate")}
                     disabled={!fullEdit}
-                    className={`w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200
-                      ${!fullEdit ? "opacity-70 cursor-not-allowed" : ""}
-                    `}
+                    min={startMin}
+                    max={startMax}
+                    className={`w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm outline-none ${
+                      !fullEdit
+                        ? "opacity-70 cursor-not-allowed"
+                        : "focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                    }`}
                   />
                 </div>
 
-                {/* Due Date */}
+                {}
                 <div>
                   <label className="block text-sm font-semibold mb-1">
                     Due Date <span className="text-rose-600">*</span>
@@ -451,24 +528,26 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                     value={form.dueDate || ""}
                     onChange={setField("dueDate")}
                     disabled={!fullEdit}
+                    min={dueMin}
+                    max={dueMax}
                     className={`w-full rounded-md border px-3 py-2 text-sm outline-none bg-gray-100 transition
                       ${
-                        isDateError
+                        hasDateError
                           ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
                           : "border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
                       }
                       ${!fullEdit ? "opacity-70 cursor-not-allowed" : ""}
                     `}
                   />
-                  {isDateError && (
+                  {hasDateError && (
                     <p className="mt-1 text-[11px] text-rose-600">
-                      Due date must be greater than or equal to start date.
+                      {dateErrorMsg}
                     </p>
                   )}
                 </div>
               </div>
 
-              {/* Assignee autocomplete */}
+              {}
               <div ref={assigneeRef} className="relative">
                 <label className="block text-sm font-semibold mb-1">
                   Assignee <span className="text-rose-600">*</span>
@@ -549,9 +628,9 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                 </p>
               )}
 
-              {/* Footer */}
+              {}
               <div className="mt-4 flex justify-between gap-2">
-                {/* Delete muncul jika fullEdit = true (owner/manager & leader sesuai prop dari parent) */}
+                {}
                 {fullEdit && (
                   <button
                     type="button"

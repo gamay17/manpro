@@ -1,4 +1,3 @@
-// src/pages/ProjectDetail/MyTaskPage.tsx
 import React from "react";
 import { useParams } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
@@ -16,7 +15,7 @@ import type { Division } from "../../types/division";
 import type { IRegisterResponse } from "../../types/auth";
 import type { Project } from "../../types/project";
 
-// ===== STATUS LABEL & COLOR =====
+
 const statusLabel: Record<TaskStatus, string> = {
   todo: "Todo",
   "in-progress": "In Progress",
@@ -40,7 +39,7 @@ const columnHeaderClass: Record<TaskStatus, string> = {
 
 const statusOptions: TaskStatus[] = ["todo", "in-progress", "review", "done"];
 
-// ===== SMALL UTILS =====
+
 const formatDate = (value?: string | null) => {
   if (!value) return "";
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
@@ -49,7 +48,7 @@ const formatDate = (value?: string | null) => {
   return date.toISOString().slice(0, 10);
 };
 
-// ===== STATUS DROPDOWN (TABLE) =====
+
 interface StatusDropdownProps {
   status: TaskStatus;
   canChange: boolean;
@@ -138,7 +137,7 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({
   );
 };
 
-// ===== MAIN PAGE =====
+
 type EditPermission = {
   canEditAllFields: boolean;
   canChangeStatusOnly: boolean;
@@ -175,7 +174,7 @@ const MyTaskPage: React.FC = () => {
 
   const [view, setView] = React.useState<ViewMode>("table");
 
-  // drag state (untuk board)
+
   const [draggedTaskId, setDraggedTaskId] = React.useState<number | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [dragOverStatus, setDragOverStatus] = React.useState<TaskStatus | null>(
@@ -232,7 +231,7 @@ const MyTaskPage: React.FC = () => {
     return map;
   }, [divisions]);
 
-  // ===== PERMISSION HELPER =====
+
   const getTaskPermission = React.useCallback(
     (task: Task) => {
       const assignee = task.assigneeId
@@ -264,7 +263,7 @@ const MyTaskPage: React.FC = () => {
     [canManageAll, currentUserId, currentMemberId, memberMap, divisionMap]
   );
 
-  // ===== LOAD DATA =====
+
   React.useEffect(() => {
     let cancelled = false;
 
@@ -294,7 +293,7 @@ const MyTaskPage: React.FC = () => {
           project.managerId === currentUserId;
         setCanManageAll(isOwnerOrManager);
 
-        // members
+
         let allMembers: Member[] = [];
         try {
           const raw = localStorage.getItem("members");
@@ -319,7 +318,7 @@ const MyTaskPage: React.FC = () => {
           setCurrentMemberId(meMember?.id ?? null);
         }
 
-        // divisions
+
         let divs: Division[] = [];
 
         try {
@@ -358,13 +357,13 @@ const MyTaskPage: React.FC = () => {
 
         if (!cancelled) setDivisions(divs);
 
-        // tasks
+
         if (taskSvc) {
           const ts = await taskSvc.getAll();
           if (!cancelled) setTasks(ts);
         }
 
-        // users
+
         try {
           const raw = localStorage.getItem("auth:users");
           if (raw) {
@@ -406,13 +405,13 @@ const MyTaskPage: React.FC = () => {
     };
   }, [projectId, currentUserId, projectSvc, taskSvc]);
 
-  // ===== HANYA TASK SAYA =====
+
   const myTasks = React.useMemo(() => {
     if (!currentMemberId) return [];
     return tasks.filter((t) => t.assigneeId === currentMemberId);
   }, [tasks, currentMemberId]);
 
-  // ===== STATUS CHANGE =====
+
   const handleStatusChange = async (idTask: number, status: TaskStatus) => {
     if (!taskSvc) return;
 
@@ -435,7 +434,7 @@ const MyTaskPage: React.FC = () => {
     }
   };
 
-  // ===== DRAG HANDLERS =====
+
   const handleDragStart = (taskId: number) => {
     const task = myTasks.find((t) => t.id === taskId);
     if (!task) return;
@@ -490,17 +489,20 @@ const MyTaskPage: React.FC = () => {
     handleDragEnd();
   };
 
-  // ===== EDIT MODAL =====
+
+
+
   const handleRowOrCardClick = (task: Task) => {
     if (isDragging) return;
 
-    const { canEditTask, isLeaderForThisTask } = getTaskPermission(task);
-    if (!canEditTask) return;
+    const { isLeaderForThisTask, isAssignee } = getTaskPermission(task);
+    const canOpenModal = canManageAll || isLeaderForThisTask || isAssignee;
+    if (!canOpenModal) return;
 
     setEditingTask(task);
     setEditPermission({
       canEditAllFields: canManageAll,
-      canChangeStatusOnly: !canManageAll && isLeaderForThisTask,
+      canChangeStatusOnly: false, // untuk MyTask: modal hanya view mode utk leader/member
     });
     setOpenEdit(true);
   };
@@ -512,6 +514,7 @@ const MyTaskPage: React.FC = () => {
       await taskSvc.remove(idTask);
       setTasks((prev) => prev.filter((t) => t.id !== idTask));
       setOpenEdit(false);
+      setEditingTask(null);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Gagal menghapus task";
@@ -523,7 +526,8 @@ const MyTaskPage: React.FC = () => {
     if (!taskSvc || !editingTask) return;
 
     const { canEditTask } = getTaskPermission(editingTask);
-    if (!canEditTask) {
+    if (!canEditTask || !canManageAll) {
+
       alert("Anda tidak punya izin mengubah task ini.");
       return;
     }
@@ -532,6 +536,7 @@ const MyTaskPage: React.FC = () => {
       const updated = await taskSvc.update(editingTask.id, input);
       setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
       setOpenEdit(false);
+      setEditingTask(null);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Gagal menyimpan perubahan task";
@@ -539,7 +544,7 @@ const MyTaskPage: React.FC = () => {
     }
   };
 
-  // ===== RENDER STATE =====
+
   if (!projectId || !Number.isFinite(projectId)) {
     return (
       <div className="max-w-6xl mx-auto px-4 pt-6 pb-10">
@@ -575,7 +580,7 @@ const MyTaskPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 pt-6 pb-10 space-y-6">
-      {/* HEADER: kiri judul, kanan toggle ala Dashboard */}
+      
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl sm:text-4xl font-bold font-poppins text-slate-900">
@@ -587,32 +592,31 @@ const MyTaskPage: React.FC = () => {
         </div>
 
         <div className="inline-flex rounded-xl bg-white/80 border border-amber-100 p-1 shadow-sm self-start sm:self-auto">
-  <Button
-    text="Table"
-    onClick={() => setView("table")}
-    className={
+          <Button
+            text="Table"
+            onClick={() => setView("table")}
+            className={
               view === "table"
-        ? "rounded-xl bg-primary text-secondary border border-transparent shadow-sm px-5 py-2.5 text-base font-semibold"
-        : "rounded-xl bg-transparent text-quinary border border-transparent px-5 py-2.5 text-base font-semibold hover:bg-amber-50"
-    }
-  />
+                ? "rounded-xl bg-primary text-secondary border border-transparent shadow-sm px-5 py-2.5 text-base font-semibold"
+                : "rounded-xl bg-transparent text-quinary border border-transparent px-5 py-2.5 text-base font-semibold hover:bg-amber-50"
+            }
+          />
 
-  <Button
-    text="Board"
-    onClick={() => setView("board")}
-    className={
-      view === "board"
-        ? "rounded-xl bg-primary text-secondary border border-transparent shadow-sm px-5 py-2.5 text-base font-semibold"
-        : "rounded-xl bg-transparent text-quinary border border-transparent px-5 py-2.5 text-base font-semibold hover:bg-amber-50"
-    }
-  />
-</div>
-
+          <Button
+            text="Board"
+            onClick={() => setView("board")}
+            className={
+              view === "board"
+                ? "rounded-xl bg-primary text-secondary border border-transparent shadow-sm px-5 py-2.5 text-base font-semibold"
+                : "rounded-xl bg-transparent text-quinary border border-transparent px-5 py-2.5 text-base font-semibold hover:bg-amber-50"
+            }
+          />
+        </div>
       </div>
 
       <div className="w-full h-[3px] rounded-full bg-gradient-to-r from-primary via-amber-400 to-transparent" />
 
-      {/* ===== TABLE VIEW ===== */}
+      
       {view === "table" && (
         <div
           className="
@@ -679,10 +683,10 @@ const MyTaskPage: React.FC = () => {
                         ? divisionMap.get(assignee.divisionId)
                         : undefined;
 
-                      const { canEditTask, canChangeStatus } =
+                      const { canEditTask, canChangeStatus, isAssignee } =
                         getTaskPermission(t);
 
-                      const rowClickable = canEditTask;
+                      const rowClickable = canEditTask || isAssignee;
 
                       return (
                         <tr
@@ -770,7 +774,7 @@ const MyTaskPage: React.FC = () => {
         </div>
       )}
 
-      {/* ===== BOARD VIEW ===== */}
+      
       {view === "board" && (
         <div className="space-y-4">
           {!hasAnyMyTask ? (
@@ -828,8 +832,11 @@ const MyTaskPage: React.FC = () => {
                           const assigneeUser =
                             assignee && userMap.get(assignee.userId);
 
-                          const { canDrag, canEditTask } = getTaskPermission(t);
+                          const { canDrag, canEditTask, isAssignee } =
+                            getTaskPermission(t);
                           const isRecentlyDropped = lastDroppedTaskId === t.id;
+
+                          const cardClickable = canEditTask || isAssignee;
 
                           return (
                             <div
@@ -837,7 +844,9 @@ const MyTaskPage: React.FC = () => {
                               draggable={canDrag}
                               onDragStart={() => handleDragStart(t.id)}
                               onDragEnd={handleDragEnd}
-                              onClick={() => handleRowOrCardClick(t)}
+                              onClick={() =>
+                                cardClickable && handleRowOrCardClick(t)
+                              }
                               className={`group rounded-2xl border px-3 py-3
                                 bg-white/95
                                 border-slate-200 shadow-xs
@@ -861,7 +870,7 @@ const MyTaskPage: React.FC = () => {
                                     : "No division"}
                                 </span>
 
-                                {canEditTask && (
+                                {cardClickable && (
                                   <span className="text-[10px] text-slate-400">
                                     •••
                                   </span>
@@ -924,7 +933,7 @@ const MyTaskPage: React.FC = () => {
         </div>
       )}
 
-      {/* EDIT MODAL */}
+      
       <EditTaskModal
         open={openEdit}
         task={editingTask}

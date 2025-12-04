@@ -1,4 +1,4 @@
-// src/service/authService.ts
+
 import type {
   IRegisterPayload,
   IRegisterResponse,
@@ -8,32 +8,32 @@ import type {
 } from "../types/auth";
 import { nowLocalDatetime } from "../utils/datetime";
 
-/** ====== LocalStorage Keys (namespaced) ====== */
+
 const NS = "auth";
 const USERS_KEY = `${NS}:users`;
 const TOKEN_KEY = `${NS}:tokens`;
 const CURRENT_USER_KEY = `${NS}:user`;
 
-/** ====== Types ====== */
+
 type ISO = string;
 
 interface IUserData extends IRegisterResponse {
-  /** MOCK ONLY: jangan dipakai di production */
+  
   password: string;
 }
 
 export type Tokens = ILoginResponse & {
-  /** epoch seconds */
+  
   accessTokenExp: number;
-  /** epoch seconds */
+  
   refreshTokenExp: number;
 };
 
-/** ====== Config (mock) ====== */
+
 const ACCESS_TTL = 15 * 60;         // 15 menit
 const REFRESH_TTL = 7 * 24 * 3600;  // 7 hari
 
-/** ====== Utils ====== */
+
 const nowMs = () => Date.now();
 const toEpoch = (ms: number) => Math.floor(ms / 1000);
 const ms = (s: number) => s * 1000;
@@ -62,7 +62,7 @@ function issueTokens(): Tokens {
   };
 }
 
-/** ====== Service (mock) ====== */
+
 export const authService = {
   async register(payload: IRegisterPayload): Promise<IRegisterResponse> {
     const users = readJSON<IUserData[]>(USERS_KEY, []);
@@ -115,7 +115,7 @@ export const authService = {
       throw new Error("Refresh token expired.");
     }
 
-    // Rotasi hanya access token (mock). Bisa juga rotasi refresh kalau mau.
+
     const next: Tokens = {
       ...tokens,
       accessToken: genUUID(),
@@ -131,7 +131,7 @@ export const authService = {
     localStorage.removeItem(CURRENT_USER_KEY);
   },
 
-  /** Helpers buat Provider/Guard/UI */
+  
   getTokens(): Tokens | null {
     return readJSON<Tokens | null>(TOKEN_KEY, null);
   },

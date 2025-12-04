@@ -1,4 +1,4 @@
-// src/pages/projects/ProjectPage.tsx
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { MoreHorizontal, Plus } from "lucide-react";
@@ -14,6 +14,9 @@ import type {
   ProjectStatus,
 } from "../../types/project";
 import type { IRegisterResponse } from "../../types/auth";
+import type { Division } from "../../types/division";
+import type { Task } from "../../types/task";
+
 import { formatDateDisplay } from "../../utils/datetime";
 import { useAuth } from "../../hooks/useAuth";
 import Select, { type Option } from "../../components/Select";
@@ -42,7 +45,12 @@ const ProjectPage: React.FC = () => {
 
   const [users, setUsers] = useState<IRegisterResponse[]>([]);
 
-  // ===== Load users (PM label) =====
+
+
+  const [divisions] = useState<Division[]>([]);
+  const [tasks] = useState<Task[]>([]);
+
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem("auth:users");
@@ -72,7 +80,7 @@ const ProjectPage: React.FC = () => {
     return m;
   }, [users]);
 
-  // ===== Load projects =====
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -86,7 +94,9 @@ const ProjectPage: React.FC = () => {
         }
       } catch (e) {
         if (!cancelled) {
-          setError(e instanceof Error ? e.message : "Failed to load projects");
+          setError(
+            e instanceof Error ? e.message : "Failed to load projects"
+          );
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -97,7 +107,7 @@ const ProjectPage: React.FC = () => {
     };
   }, [svc]);
 
-  // ===== Filter search =====
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return projects;
@@ -108,7 +118,7 @@ const ProjectPage: React.FC = () => {
     );
   }, [projects, query]);
 
-  // ===== Modal controls =====
+
   const openModal = () => setSp({ new: "1" }, { replace: false });
   const closeModal = () => {
     const next = new URLSearchParams(sp);
@@ -116,7 +126,7 @@ const ProjectPage: React.FC = () => {
     setSp(next, { replace: true });
   };
 
-  // ===== CRUD handlers =====
+
   const onAdd = async (data: CreateProjectInput) => {
     if (!svc) return;
     try {
@@ -161,7 +171,7 @@ const ProjectPage: React.FC = () => {
     }
   };
 
-  // ===== Menu refs (click outside) =====
+
   const menuRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   useEffect(() => {
@@ -187,11 +197,10 @@ const ProjectPage: React.FC = () => {
     return p.managerId;
   };
 
-  // ================== RENDER ==================
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-0 pt-4 pb-6">
-      {/* Search + button row (compact) */}
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <SearchBar
           value={query}
           onChange={setQuery}
@@ -211,8 +220,7 @@ const ProjectPage: React.FC = () => {
         </button>
       </div>
 
-      {/* List / states */}
-      {loading ? (
+            {loading ? (
         <div className="rounded-xl bg-white/85 border border-slate-200 p-3 text-xs sm:text-sm text-slate-600 shadow-sm">
           Loading projects…
         </div>
@@ -246,8 +254,7 @@ const ProjectPage: React.FC = () => {
                 transition
               "
             >
-              {/* Title + actions (compact) */}
-              <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
                   <h3 className="font-semibold font-poppins text-quinary text-base">
                     {p.name}
@@ -260,8 +267,7 @@ const ProjectPage: React.FC = () => {
                   )}
                 </div>
 
-                {/* Menu */}
-                <div
+                                <div
                   className="relative"
                   ref={(el) => {
                     if (el) menuRefs.current.set(p.id, el);
@@ -301,7 +307,7 @@ const ProjectPage: React.FC = () => {
                         className="block w-full text-left px-3 py-1.5 text-xs font-inter hover:bg-gray-50"
                         role="menuitem"
                       >
-                        Edit
+                          Edit
                       </button>
                       <button
                         onClick={(e) => {
@@ -312,15 +318,14 @@ const ProjectPage: React.FC = () => {
                         className="block w-full text-left px-3 py-1.5 text-xs font-inter text-red-600 hover:bg-red-50"
                         role="menuitem"
                       >
-                        Delete
+                          Delete
                       </button>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Meta row (compact) */}
-              <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-quaternary font-inter">
+                            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-quaternary font-inter">
                 <label
                   className="inline-flex items-center gap-1.5"
                   onClick={(e) => e.stopPropagation()}
@@ -379,8 +384,7 @@ const ProjectPage: React.FC = () => {
         </ul>
       )}
 
-      {/* Modal Add */}
-      <AddProjectModal
+            <AddProjectModal
         open={modalOpen}
         onClose={closeModal}
         onSubmit={(data: CreateProjectInput) => {
@@ -389,8 +393,7 @@ const ProjectPage: React.FC = () => {
         }}
       />
 
-      {/* Modal Edit */}
-      {editProject && (
+            {editProject && (
         <EditProjectModal
           open={editOpen}
           initial={{
@@ -400,6 +403,10 @@ const ProjectPage: React.FC = () => {
             endDate: editProject.endDate ?? "",
             managerId: editProject.managerId ?? "",
           }}
+
+          projectId={editProject.id}
+          divisions={divisions.filter((d) => d.projectId === editProject.id)}
+          tasks={tasks.filter((t) => t.projectId === editProject.id)}
           onClose={() => {
             setEditOpen(false);
             setEditProject(null);

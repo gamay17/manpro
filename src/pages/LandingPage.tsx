@@ -11,13 +11,13 @@ const LandingPage = () => {
         text-slate-900
       "
     >
-      {/* Soft overlay biar nggak terlalu ngejreng */}
+      
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_0%,rgba(255,255,255,0.9),transparent_55%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_100%,rgba(255,255,255,0.9),transparent_50%)]" />
 
-      {/* Content wrapper */}
+      
       <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col px-6 py-6 sm:px-8 lg:px-10 lg:py-10">
-        {/* Top bar */}
+        
         <header className="flex items-center justify-between mb-8 sm:mb-10">
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-black/5 backdrop-blur-sm">
@@ -49,9 +49,9 @@ const LandingPage = () => {
           </div>
         </header>
 
-        {/* Main section */}
+        
         <div className="flex flex-1 flex-col items-center gap-10 lg:flex-row lg:items-center lg:gap-14">
-          {/* Left – Hero copy */}
+          
           <motion.div
             initial={{ opacity: 0, x: -24 }}
             animate={{ opacity: 1, x: 0 }}
@@ -108,7 +108,7 @@ const LandingPage = () => {
               </Link>
             </motion.div>
 
-            {/* Small feature list */}
+            
             <div className="mt-6 flex flex-wrap justify-center gap-4 text-xs font-inter text-slate-700 lg:justify-start">
               <div className="inline-flex items-center gap-1.5 rounded-full bg-white/60 px-3 py-1 shadow-sm">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -125,7 +125,7 @@ const LandingPage = () => {
             </div>
           </motion.div>
 
-          {/* Right – Preview card / mockup */}
+          
           <motion.div
             initial={{ opacity: 0, x: 24, scale: 0.97 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
@@ -212,7 +212,7 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* Floating rocket (besar) */}
+      
       <motion.div
         initial={{ y: 0 }}
         animate={{ y: [0, -12, 0] }}
@@ -224,7 +224,7 @@ const LandingPage = () => {
         </div>
       </motion.div>
 
-      {/* Tiny floating particles */}
+      
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <motion.div
           animate={{ y: [0, -18, 0], opacity: [0.2, 0.6, 0.2] }}

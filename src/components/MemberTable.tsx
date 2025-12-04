@@ -17,10 +17,10 @@ interface MemberTableProps {
   onAddMember?: () => void;
 }
 
-/** Role normalisasi internal */
+
 type NormalizedRole = "owner" | "manager" | "leader" | "member";
 
-/** Label UI */
+
 const roleLabel: Record<NormalizedRole, string> = {
   owner: "Owner",
   manager: "Manager",
@@ -28,7 +28,7 @@ const roleLabel: Record<NormalizedRole, string> = {
   member: "Member",
 };
 
-/** Sorting prioritas */
+
 const roleOrder: Record<NormalizedRole, number> = {
   owner: 1,
   manager: 2,
@@ -36,7 +36,7 @@ const roleOrder: Record<NormalizedRole, number> = {
   member: 4,
 };
 
-/** Normalisasi role bebas → role UI */
+
 function normalizeRole(raw: string): NormalizedRole {
   const v = raw.trim().toLowerCase();
 
@@ -56,21 +56,21 @@ const MemberTable: React.FC<MemberTableProps> = ({
   onRowClick,
   onAddMember,
 }) => {
-  /* MAP USER */
+  
   const userMap = React.useMemo(() => {
     const map = new Map<string, IRegisterResponse>();
     users.forEach((u) => map.set(u.id, u));
     return map;
   }, [users]);
 
-  /* MAP DIVISION */
+  
   const divisionMap = React.useMemo(() => {
     const map = new Map<number, Division>();
     divisions.forEach((d) => map.set(d.id, d));
     return map;
   }, [divisions]);
 
-  /* SORT MEMBER LIST (owner → manager → leader → member) */
+  
   const sortedMembers = React.useMemo(() => {
     return [...members].sort((a, b) => {
       const ra = normalizeRole(String(a.role));
@@ -98,7 +98,7 @@ const MemberTable: React.FC<MemberTableProps> = ({
 
   return (
     <div className="mt-6 bg-white/95 rounded-3xl shadow-[0_18px_45px_rgba(15,23,42,0.08)] border border-gray-100/80">
-      {/* Header, disamakan dengan DivisionTable */}
+      {}
       <div className="flex items-center justify-between px-4 sm:px-5 pt-4 pb-3 border-b border-slate-100/80">
         <h3 className="text-base sm:text-lg font-semibold text-slate-900">
           Members
@@ -176,12 +176,12 @@ const MemberTable: React.FC<MemberTableProps> = ({
                         }
                       `}
                     >
-                      {/* No */}
+                      {}
                       <td className="py-3 px-3 text-slate-400 align-top text-[11px] sm:text-xs text-center">
                         {idx + 1}
                       </td>
 
-                      {/* User */}
+                      {}
                       <td className="py-3 px-3 align-top">
                         {user ? (
                           <div className="flex items-center gap-3 min-w-0">
@@ -204,7 +204,7 @@ const MemberTable: React.FC<MemberTableProps> = ({
                         )}
                       </td>
 
-                      {/* Division */}
+                      {}
                       <td className="py-3 px-3 align-top">
                         {division ? (
                           <span className="truncate inline-block max-w-[180px] text-[12px] text-slate-800">
@@ -217,7 +217,7 @@ const MemberTable: React.FC<MemberTableProps> = ({
                         )}
                       </td>
 
-                      {/* Role */}
+                      {}
                       <td className="py-3 px-3 align-top text-center">
                         <span
                           className={`

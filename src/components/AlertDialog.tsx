@@ -69,7 +69,7 @@ export const AlertDialog: React.FC<AlertDialogProps> & {
   );
 };
 
-/* ---------- SINGLETON ROOT (anti createRoot berulang) ---------- */
+
 
 let portalContainer: HTMLDivElement | null = null;
 let portalRoot: Root | null = null;
@@ -87,7 +87,7 @@ function ensureRoot(): Root {
 }
 
 function closeDialog() {
-  // Jangan destroy root; cukup kosongkan isinya supaya bisa dipakai lagi.
+
   portalRoot?.render(null);
 }
 

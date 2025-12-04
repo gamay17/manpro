@@ -19,7 +19,7 @@ function cx(...args: Array<string | false | null | undefined>) {
   return args.filter(Boolean).join(" ");
 }
 
-// hitung panjang maksimal label
+
 function measureTextWidth(text: string, font = "14px Inter") {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
@@ -44,7 +44,7 @@ export default function Select<T extends string = string>({
     [options, value]
   );
 
-  // ⭐ width berdasarkan label terpanjang (Completed)
+
   const maxWidth = useMemo(() => {
     const widths = options.map((o) => measureTextWidth(o.label));
     const longest = Math.max(...widths);

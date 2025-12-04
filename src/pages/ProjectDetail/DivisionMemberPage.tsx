@@ -1,4 +1,4 @@
-// src/pages/dashboard/DivisionMemberPage.tsx
+
 import { useState } from "react";
 import type { ReactNode } from "react";
 
@@ -18,8 +18,12 @@ import type {
   Member,
   CreateMemberInput as CreateMemberPayload,
 } from "../../types/member";
+import type { Project } from "../../types/project";
 
 interface DivisionMemberPageProps {
+  
+  project: Project;
+
   divisions: Division[];
   users: IRegisterResponse[];
 
@@ -44,6 +48,7 @@ interface DivisionMemberPageProps {
 }
 
 export default function DivisionMemberPage({
+  project,
   divisions,
   users,
   divisionCount,
@@ -86,14 +91,14 @@ export default function DivisionMemberPage({
     setEditMemberOpen(true);
   };
 
-  // ✅ DELETE DIVISION + HAPUS SEMUA MEMBER DI DIVISION TERSEBUT
+
   const handleDeleteDivisionCascade = (divisionId: number) => {
-    // 1) Hapus division
+
     if (onDelete) {
       onDelete(divisionId);
     }
 
-    // 2) Hapus semua member yang terkait division ini
+
     if (onDeleteMember) {
       const membersInDivision = members.filter(
         (m) => m.divisionId === divisionId
@@ -107,7 +112,7 @@ export default function DivisionMemberPage({
 
   return (
     <div className="mt-6 space-y-10">
-      {/* === Summary Section === */}
+      
       <div className="flex gap-6 justify-center items-center">
         <div className="w-44 flex flex-col items-center justify-center py-3 rounded-xl shadow-sm bg-white border border-slate-200 text-black font-poppins transition hover:shadow-md">
           <span className="font-semibold text-base mb-1 text-quinary">
@@ -128,9 +133,9 @@ export default function DivisionMemberPage({
         </div>
       </div>
 
-      {/* === PAGE CONTENT === */}
+      
       <div className="space-y-12">
-        {/* ====== DIVISI ====== */}
+        
         <section className="space-y-4">
           <AddDivisionModal
             open={addDivisionOpen}
@@ -138,6 +143,7 @@ export default function DivisionMemberPage({
             onSubmit={handleSubmitNewDivision}
             existingDivisions={divisions}
             existingMembers={members}
+            project={project} // ✅ penting: kirim project ke modal
           />
 
           <DivisionTable
@@ -152,7 +158,7 @@ export default function DivisionMemberPage({
           />
         </section>
 
-        {/* ====== MEMBER ====== */}
+        
         <section className="space-y-4">
           <AddMemberModal
             open={addMemberOpen}

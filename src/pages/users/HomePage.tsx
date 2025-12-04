@@ -4,8 +4,7 @@ import ProjectSummary from "../../components/ProjectSummary";
 const HomePage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-0 py-6 sm:py-8">
-      {/* HEADER TEKS */}
-      <header className="mb-6 sm:mb-8">
+            <header className="mb-6 sm:mb-8">
         <h1 className="font-poppins font-bold text-quinary text-3xl sm:text-4xl">
           Plan Smarter, Work Better
         </h1>
@@ -14,8 +13,7 @@ const HomePage: React.FC = () => {
         </p>
       </header>
 
-      {/* CARD UTAMA HOME */}
-      <section
+            <section
         className="
           bg-white rounded-2xl
           shadow-[0_18px_45px_rgba(15,23,42,0.08)]
@@ -23,13 +21,11 @@ const HomePage: React.FC = () => {
           px-4 sm:px-6 md:px-8 py-5 sm:py-6 space-y-6
         "
       >
-        {/* Search di atas */}
-        <div>
+                <div>
           <SearchBar />
         </div>
 
-        {/* Summary project di bawah */}
-        <div>
+                <div>
           <ProjectSummary />
         </div>
       </section>
